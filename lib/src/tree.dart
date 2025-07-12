@@ -4,40 +4,57 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'package:json_annotation/json_annotation.dart';
+
+part 'tree.g.dart';
+
 /// A tree of composition items reflecting the generator hierarchy
-class Tree<T extends Map<String, dynamic>> {
+@JsonSerializable(explicitToJson: true)
+class Tree {
   /// Constructor
-  const Tree({required this.item, required this.children});
+  const Tree({required this.item, this.children = const {}});
 
   /// Example instance for test purposes
-  static Tree<Map<String, dynamic>> example() {
+  factory Tree.example() {
     return Tree._example();
   }
 
   // ...........................................................................
-
   /// The item of this tree node
-  final T item;
+  final Map<String, dynamic> item;
 
   /// Child tree items
-  final List<Tree<T>> children;
+  final Map<String, Tree> children;
+
+  // ...........................................................................
+  /// Creates a [Tree] from a JSON map
+  factory Tree.fromJson(Map<String, dynamic> json) => _$TreeFromJson(json);
+
+  /// Converts this [Tree] to a JSON map
+  Map<String, dynamic> toJson() {
+    final result = _$TreeToJson(this);
+    if (children.isEmpty) {
+      result.remove('children');
+    }
+    return result;
+  }
 
   // ######################
   // Private
   // ######################
 
-  static Tree<Map<String, dynamic>> _example() {
+  factory Tree._example() {
     return const Tree(
       item: {'hello': 'world'},
-      children: [
-        Tree(item: {'child1': 'value1'}, children: []),
-        Tree(
+      children: {
+        'child1': Tree(item: {'child1': 'value1'}),
+        'child2': Tree(
           item: {'child2': 'value2'},
-          children: [
-            Tree(item: {'grandchild': 'value3'}, children: []),
-          ],
+          children: {
+            'grandchild': Tree(item: {'grandchild': 'value3'}),
+          },
         ),
-      ],
+      },
     );
   }
 }
