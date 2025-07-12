@@ -6,8 +6,4 @@
 
 library;
 
-export 'src/container.dart';
-export 'src/container_item.dart';
-export 'src/example_container.dart';
-export 'src/example_item.dart';
 export 'src/tree.dart';
