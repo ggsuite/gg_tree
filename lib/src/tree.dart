@@ -12,19 +12,16 @@ part 'tree.g.dart';
 @JsonSerializable(explicitToJson: true)
 class Tree {
   /// Constructor
-  const Tree({required this.item, this.children = const {}});
+  const Tree({
+    required Map<String, dynamic> item,
+    Map<String, Tree> children = const {},
+  }) : _children = children,
+       _item = item;
 
   /// Example instance for test purposes
   factory Tree.example() {
     return Tree._example();
   }
-
-  // ...........................................................................
-  /// The item of this tree node
-  final Map<String, dynamic> item;
-
-  /// Child tree items
-  final Map<String, Tree> children;
 
   // ...........................................................................
   /// Creates a [Tree] from a JSON map
@@ -33,15 +30,29 @@ class Tree {
   /// Converts this [Tree] to a JSON map
   Map<String, dynamic> toJson() {
     final result = _$TreeToJson(this);
-    if (children.isEmpty) {
+    if (_children.isEmpty) {
       result.remove('children');
     }
     return result;
   }
 
+  // ...........................................................................
+  /// Returns the item belonging to the tree
+  Map<String, dynamic> get item => _item;
+
+  /// Get the children of the tree
+  Map<String, Tree> get children => _children;
+
   // ######################
   // Private
   // ######################
+
+  // ...........................................................................
+  /// The item of this tree node
+  final Map<String, dynamic> _item;
+
+  /// Child tree items
+  final Map<String, Tree> _children;
 
   factory Tree._example() {
     return const Tree(

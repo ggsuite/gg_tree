@@ -7,3 +7,4 @@
 library;
 
 export 'src/tree.dart';
+export 'src/tree_tools.dart';
