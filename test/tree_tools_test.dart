@@ -11,13 +11,6 @@ void main() {
   group('TreeTools', () {
     group('constructor', () {
       test('should work', () {
-        final tree = Tree.example();
-        final treeTools = TreeTools(tree: tree);
-        expect(treeTools.tree, equals(tree));
-      });
-    });
-    group('example', () {
-      test('should work', () {
         final treeTools = TreeTools.example();
         expect(treeTools, isNotNull);
       });

@@ -5,6 +5,7 @@
 ### Added
 
 - Add .gitattributes file
+- Add TreeTools
 
 ### Changed
 
