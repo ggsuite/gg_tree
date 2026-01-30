@@ -9,38 +9,29 @@ import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/src/tree_data.dart';
 
 /// A tree of composition items reflecting the generator hierarchy
+
 class Tree<T extends TreeData> {
   /// Constructor
-  Tree({
-    required this.key,
+  factory Tree({
+    required String key,
     required Tree<T> parent,
     required T value,
     Iterable<Tree<T>> children = const [],
-  }) : _data = value,
-       _children = [...children] {
-    _throwOnInvalidKey();
-    for (final child in children) {
-      child.parent = this;
-    }
-
-    this.parent = parent;
-  }
+  }) => Tree._(key: key, parent: parent, value: value, children: children);
 
   // ...........................................................................
   /// Constructor for a root tree
-  Tree.root({
-    required this.key,
+  factory Tree.root({
+    required String key,
     required T value,
     Iterable<Tree<T>> children = const [],
-  }) : _parent = null,
-       _data = value,
-       _children = [...children];
+  }) => Tree._(key: key, parent: null, value: value, children: children);
 
   // ...........................................................................
   /// Example instance for test purposes
-  static Tree<ExampleData> example() {
+  static Tree<ExampleData> example({String? key}) {
     final root = Tree<ExampleData>.root(
-      key: 'root',
+      key: key ?? 'root',
       value: ExampleData(exampleJsonPrimitive),
     );
 
@@ -69,10 +60,13 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   /// Set the parent
   set parent(Tree<T>? parent) {
-    throwWhenReadonly();
+    _throwWhenReadonly();
     _parent?._children.remove(this);
     _parent = parent;
-    _parent?._children.add(this);
+
+    if (_parent?._children.contains(this) == false) {
+      _parent?._children.add(this);
+    }
   }
 
   /// Returns the parent node or null if this is the root
@@ -90,70 +84,100 @@ class Tree<T extends TreeData> {
 
   /// Write a value into this node
   void set<V>(String key, V value) {
-    throwWhenReadonly();
+    _throwWhenReadonly();
     _set<V>(key, value);
   }
 
   // ...........................................................................
   /// Make this node read only
   void setReadOnly(bool readOnly, {bool recursive = false}) {
-    _readOnly = readOnly;
-    for (final child in children) {
-      child.setReadOnly(true, recursive: recursive);
+    _isReadOnly = readOnly;
+    if (recursive) {
+      for (final child in children) {
+        child.setReadOnly(true, recursive: recursive);
+      }
     }
   }
 
   /// Wether this tree node is readonly
-  bool get readOnly => _readOnly;
-
-  // ...........................................................................
-  /// Throws an exception when this tree is readonly
-  void throwWhenReadonly() {
-    if (readOnly) {
-      throw Exception('Tree node with key $key is readonly');
-    }
-  }
-
-  /// Throws when this node's key is not valid
-  void throwOnInvalidKey() => _throwOnInvalidKey();
+  bool get isReadOnly => _isReadOnly;
 
   // ...........................................................................
   /// Converts this [JsonTree] to a JSON map
   Json toJson() => _toJson(this);
 
+  /// Creates a [JsonTree] from a JSON map
+  Tree fromJson(Json json) => _fromJson(json);
+
   // ######################
   // Private
   // ######################
 
+  // ...........................................................................
   final List<Tree<T>> _children;
 
   T _data;
 
   Tree<T>? _parent;
 
-  bool _readOnly = false;
+  bool _isReadOnly = false;
 
-  void _throwOnInvalidKey() {
-    final isValid = RegExp(
-      r'^[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)*$',
-    ).hasMatch(key);
-    if (!isValid) {
-      throw Exception(
-        [
-          'Invalid key "$key". ',
-          'Expected lowerCamelCase and not starting with a number.',
-        ].join('\n'),
-      );
+  // ...........................................................................
+  Tree._({
+    required this.key,
+    required Tree<T>? parent,
+    required T value,
+    Iterable<Tree<T>> children = const [],
+  }) : _data = value,
+       _children = [...children] {
+    _init(parent);
+  }
+
+  // ...........................................................................
+  void _init(Tree<T>? parent) {
+    throwIfNotValidJsonKey(key);
+    _throwOnForbiddenKey();
+    for (final child in [...children]) {
+      child.parent = this;
+    }
+    this.parent = parent;
+  }
+
+  // ...........................................................................
+  void _throwOnForbiddenKey() {
+    if (key.startsWith('_')) {
+      throw Exception('Key "$key" must not start with _');
     }
   }
 
+  // ...........................................................................
   Json _toJson(Tree tree) {
     final json = Json();
-    json['_value'] = tree.value.toJson();
+    json['key'] = tree.key;
+    json['isReadOnly'] = tree.isReadOnly;
+    json['_data'] = tree.value.toJson();
+
+    final childrenJson = <Json>[];
     for (final child in tree.children) {
-      json[child.key] = _toJson(child);
+      childrenJson.add(_toJson(child));
     }
+    json['_children'] = childrenJson;
     return json;
+  }
+
+  // ...........................................................................
+  Tree<T> _fromJson(Json json) {
+    final ch = <Tree<T>>[];
+    for (final childJson in (json['_children'] as List).cast<Json>()) {
+      ch.add(_fromJson(childJson));
+    }
+
+    return Tree._(
+      key: json['key'] as String,
+      parent: null,
+      value: _data.fromJson(json['_data'] as Json) as T,
+      children: ch,
+    );
   }
 
   // ...........................................................................
@@ -192,9 +216,19 @@ class Tree<T extends TreeData> {
       DirectJson(json: json).set(query, value);
       _data = _data.fromJson(json) as T;
     } else {
+      // coverage:ignore-start
       throw UnimplementedError(
         'Cannot set value for query "$query" for tree with key "$key"',
       );
+      // coverage:ignore-end
+    }
+  }
+
+  // ...........................................................................
+  /// Throws an exception when this tree is readonly
+  void _throwWhenReadonly() {
+    if (isReadOnly) {
+      throw Exception('Tree node "$key" is readonly');
     }
   }
 }

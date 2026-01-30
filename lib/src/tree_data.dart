@@ -37,4 +37,8 @@ class ExampleData implements TreeData {
   ExampleData fromJson(Json json) {
     return ExampleData(json);
   }
+
+  /// Convenience method to create from JSON
+  factory ExampleData.fromJson(Json json) =>
+      ExampleData.example().fromJson(json);
 }

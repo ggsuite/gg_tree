@@ -4,9 +4,9 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'package:gg_golden/gg_golden.dart';
 import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
-import 'package:gg_tree/src/tree_data.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -26,6 +26,85 @@ void main() {
     group('Tree(), Tree.root(), Tree.example()', () {
       test('should create an instance', () {
         expect(tree, isNotNull);
+      });
+
+      group('throws, when key is not a valid JSON key', () {
+        test('for root constructors', () {
+          var messages = <String>[];
+          try {
+            Tree.example(key: 'invalid-key');
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['invalid-key is not a valid json identifier']);
+        });
+
+        test('for child constructors', () {
+          var messages = <String>[];
+          try {
+            final root = Tree.example();
+            Tree(
+              key: 'invalid-child-key',
+              parent: root,
+              value: ExampleData.example(),
+            );
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, [
+            'invalid-child-key is not a valid json identifier',
+          ]);
+        });
+      });
+
+      group('throws, when key starts with underscore', () {
+        test('for root constructors', () {
+          var messages = <String>[];
+          try {
+            Tree.example(key: '_forbiddenKey');
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Key "_forbiddenKey" must not start with _']);
+        });
+
+        test('for child constructors', () {
+          var messages = <String>[];
+          try {
+            final root = Tree.example();
+            Tree(
+              key: '_forbiddenChildKey',
+              parent: root,
+              value: ExampleData.example(),
+            );
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Key "_forbiddenChildKey" must not start with _']);
+        });
+      });
+
+      group('reassigns all children to the new parent', () {
+        test('for root constructors', () {
+          // Before
+          expect(child.parent, same(root));
+          expect(grandChild.parent, same(child));
+
+          // Act
+          final newRoot = Tree<ExampleData>.root(
+            key: 'newRoot',
+            value: ExampleData.example(),
+            children: [child, grandChild],
+          );
+
+          // After
+          expect(child.parent, same(newRoot));
+          expect(grandChild.parent, same(newRoot));
+        });
       });
     });
 
@@ -131,12 +210,123 @@ void main() {
     });
 
     group('set(key, value)', () {
-      test('writes data into the tree', () {
-        root.set<int>('.newInteger', 100);
-        expect(root.get<int>('.newInteger'), 100);
+      group('writes data into the tree', () {
+        group('with just a "." query', () {
+          test('write the complete node', () {
+            root.set('.', {'new': 'object'});
+            expect(root.value.data, {'new': 'object'});
+          });
+        });
+        test('with a simple non nested query', () {
+          root.set<int>('.integerValue', 123);
+          expect(root.get<int>('.integerValue'), 123);
+        });
 
-        child.set<String>('.newString', 'hello');
-        expect(child.get<String>('.newString'), 'hello');
+        test('with a nested query', () {
+          expect(child.get<String>('.objectValue.nestedString'), 'nested');
+          child.set('.objectValue.nestedString', 'change');
+          expect(child.get<String>('.objectValue.nestedString'), 'change');
+        });
+      });
+    });
+
+    group('setReadOnly', () {
+      group('with recursive = true', () {
+        test('sets all children to readonly', () {
+          // Before
+          expect(root.isReadOnly, isFalse);
+          expect(child.isReadOnly, isFalse);
+          expect(grandChild.isReadOnly, isFalse);
+
+          // Act
+          root.setReadOnly(true, recursive: true);
+
+          // After
+          expect(root.isReadOnly, isTrue);
+          expect(child.isReadOnly, isTrue);
+          expect(grandChild.isReadOnly, isTrue);
+        });
+      });
+
+      group('with recursive false', () {
+        test('sets only this node to readonly', () {
+          // Before
+          expect(root.isReadOnly, isFalse);
+          expect(child.isReadOnly, isFalse);
+          expect(grandChild.isReadOnly, isFalse);
+
+          // Act
+          root.setReadOnly(true, recursive: false);
+
+          // After
+          expect(root.isReadOnly, isTrue);
+          expect(child.isReadOnly, isFalse);
+          expect(grandChild.isReadOnly, isFalse);
+        });
+      });
+
+      group('makes all write operations throw', () {
+        test('when trying to set parent', () {
+          root.setReadOnly(true, recursive: true);
+
+          var message = <String>[];
+          try {
+            child.parent = null;
+          } catch (e) {
+            message = (e as dynamic).message.toString().trim().split('\n');
+          }
+
+          expect(message, ['Tree node "child" is readonly']);
+        });
+
+        test('when trying to set data', () {
+          root.setReadOnly(true, recursive: true);
+
+          var message = <String>[];
+          try {
+            root.set<int>('.integerValue', 123);
+          } catch (e) {
+            message = (e as dynamic).message.toString().trim().split('\n');
+          }
+
+          expect(message, ['Tree node "root" is readonly']);
+        });
+      });
+    });
+
+    group('toJson', () {
+      test(
+        'returns identical tree after serialization and deserialization',
+        () async {
+          final json = tree.toJson();
+          await writeGolden('to_json.json', json);
+        },
+      );
+    });
+
+    group('fromJson', () {
+      test('creates a tree from json identical to the original', () async {
+        // Create json from original tree
+        final json = tree.toJson();
+        final newTree = tree.fromJson(json);
+
+        // Check parents
+        expect(newTree.parent, isNull);
+        for (final child in newTree.children) {
+          expect(child.parent, same(newTree));
+          for (final grandChild in child.children) {
+            expect(grandChild.parent, same(child));
+          }
+        }
+
+        // Serialize back to json
+        final json2 = newTree.toJson();
+
+        // Write golden
+        await writeGolden('from_json.json', json2);
+
+        // Compare
+        expect(json2, json);
       });
     });
   });

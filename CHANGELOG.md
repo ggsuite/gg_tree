@@ -10,6 +10,7 @@
 ### Changed
 
 - Publish to pub.dev
+- Basic implementation
 
 ## [1.0.0] - 2025-07-12
 
