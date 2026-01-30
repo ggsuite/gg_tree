@@ -351,5 +351,96 @@ void main() {
         expect(copiedChild.parent, same(copy));
       });
     });
+
+    group('ls', () {
+      test('return all paths of the tree', () {
+        expect(root.ls(), ['/', '/child', '/child/grandChild']);
+      });
+    });
+
+    group('make sure children have unique node names', () {
+      late Tree<ExampleData> parent;
+      late Tree<ExampleData> child0;
+      late Tree<ExampleData> child1;
+      late Tree<ExampleData> child2;
+
+      final ev = ExampleData.example();
+
+      setUp(() {
+        parent = Tree<ExampleData>.root(
+          key: 'parent',
+          value: ExampleData.example(),
+        );
+
+        child0 = Tree<ExampleData>.root(key: 'child', value: ev);
+        child1 = Tree<ExampleData>.root(key: 'child', value: ev);
+        child2 = Tree<ExampleData>.root(key: 'child', value: ev);
+      });
+
+      group('auto correct when nodes have not unique names', () {
+        group('when nodes are provided via', () {
+          test('constructor', () {
+            parent = Tree<ExampleData>.root(
+              key: 'name',
+              value: ev,
+              children: [child0, child1, child2],
+            );
+            expect(parent.children.elementAt(0).key, 'child0');
+            expect(parent.children.elementAt(1).key, 'child1');
+            expect(parent.children.elementAt(2).key, 'child2');
+          });
+
+          test('via addChildren', () {
+            parent.addChildren([child0]);
+            expect(parent.children.elementAt(0).key, 'child');
+
+            parent.addChildren([child1]);
+            expect(parent.children.elementAt(0).key, 'child0');
+            expect(parent.children.elementAt(1).key, 'child1');
+
+            parent.addChildren([child2]);
+            expect(parent.children.elementAt(0).key, 'child0');
+            expect(parent.children.elementAt(1).key, 'child1');
+            expect(parent.children.elementAt(2).key, 'child2');
+          });
+
+          test('via setParent', () {
+            expect(parent.children.isEmpty, isTrue);
+
+            child0.parent = parent;
+            child1.parent = parent;
+            child2.parent = parent;
+
+            expect(parent.children.elementAt(0).key, 'child0');
+            expect(parent.children.elementAt(1).key, 'child1');
+            expect(parent.children.elementAt(2).key, 'child2');
+          });
+        });
+
+        test('sibling nodes with same name are renamed', () {
+          final parent = Tree<ExampleData>.root(key: 'parent', value: ev);
+          final child1 = Tree<ExampleData>.root(key: 'child', value: ev);
+          final child2 = Tree<ExampleData>.root(key: 'child', value: ev);
+
+          parent.addChildren([child1, child2]);
+
+          expect(parent.children.elementAt(0).key, 'child0');
+          expect(parent.children.elementAt(1).key, 'child1');
+        });
+
+        test('multiple sibling nodes with same name are renamed', () {
+          final parent = Tree<ExampleData>.root(key: 'parent', value: ev);
+          final child1 = Tree<ExampleData>.root(key: 'child', value: ev);
+          final child2 = Tree<ExampleData>.root(key: 'child', value: ev);
+          final child3 = Tree<ExampleData>.root(key: 'child', value: ev);
+
+          parent.addChildren([child1, child2, child3]);
+
+          expect(parent.children.elementAt(0).key, 'child0');
+          expect(parent.children.elementAt(1).key, 'child1');
+          expect(parent.children.elementAt(2).key, 'child2');
+        });
+      });
+    });
   });
 }

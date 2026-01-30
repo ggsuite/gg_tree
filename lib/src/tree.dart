@@ -17,7 +17,14 @@ class Tree<T extends TreeData> {
     required Tree<T> parent,
     required T value,
     Iterable<Tree<T>> children = const [],
-  }) => Tree._(key: key, parent: parent, value: value, children: children);
+    String? originalKey,
+  }) => Tree._(
+    key: key,
+    parent: parent,
+    value: value,
+    children: children,
+    originalKey: originalKey,
+  );
 
   // ...........................................................................
   /// Constructor for a root tree
@@ -25,7 +32,14 @@ class Tree<T extends TreeData> {
     required String key,
     required T value,
     Iterable<Tree<T>> children = const [],
-  }) => Tree._(key: key, parent: null, value: value, children: children);
+    String? originalKey,
+  }) => Tree._(
+    key: key,
+    parent: null,
+    value: value,
+    children: children,
+    originalKey: originalKey,
+  );
 
   // ...........................................................................
   /// Example instance for test purposes
@@ -54,6 +68,9 @@ class Tree<T extends TreeData> {
   /// The key of this node
   String key;
 
+  /// The original unnamed key.
+  String originalKey;
+
   /// Returns the value of this node
   T get value => _data;
 
@@ -67,6 +84,8 @@ class Tree<T extends TreeData> {
     if (_parent?._children.contains(this) == false) {
       _parent?._children.add(this);
     }
+
+    _parent?._makeNodeNamesUnique();
   }
 
   /// Returns the parent node or null if this is the root
@@ -74,6 +93,12 @@ class Tree<T extends TreeData> {
 
   /// Returns a list of children
   Iterable<Tree<T>> get children => _children;
+
+  /// Returns all children to list of children
+  void addChildren(Iterable<Tree<T>> children) {
+    _children.addAll(children);
+    _makeNodeNamesUnique();
+  }
 
   // ...........................................................................
   /// Returns a json value for this query
@@ -113,6 +138,15 @@ class Tree<T extends TreeData> {
   /// Creates a deep copy of this tree
   Tree<T> deepCopy() => _deepCopy(this);
 
+  // ...........................................................................
+  /// Lists all objects paths of this tree
+  List<String> ls({String prefix = ''}) {
+    final paths = <String>[];
+
+    _ls(paths, '');
+    return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
+  }
+
   // ######################
   // Private
   // ######################
@@ -132,9 +166,12 @@ class Tree<T extends TreeData> {
     required Tree<T>? parent,
     required T value,
     Iterable<Tree<T>> children = const [],
-  }) : _data = value,
+    required String? originalKey,
+  }) : originalKey = originalKey ?? key,
+       _data = value,
        _children = [...children] {
     _init(parent);
+    _makeNodeNamesUnique();
   }
 
   // ...........................................................................
@@ -158,6 +195,7 @@ class Tree<T extends TreeData> {
   Json _toJson(Tree tree) {
     final json = Json();
     json['key'] = tree.key;
+    json['originalKey'] = tree.originalKey;
     json['isReadOnly'] = tree.isReadOnly;
     json['_data'] = tree.value.toJson();
 
@@ -178,6 +216,7 @@ class Tree<T extends TreeData> {
 
     return Tree._(
       key: json['key'] as String,
+      originalKey: json['originalKey'] as String,
       parent: null,
       value: _data.fromJson(json['_data'] as Json) as T,
       children: ch,
@@ -238,4 +277,62 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   Tree<T> _deepCopy(Tree<T> tree) => fromJson(toJson());
+
+  // ...........................................................................
+  void _ls(List<String> paths, String ownPath) {
+    final path = ownPath.isEmpty ? '/' : ownPath;
+    paths.add(path);
+
+    for (final child in children) {
+      child._ls(paths, '$ownPath/${child.key}');
+    }
+  }
+
+  // ...........................................................................
+  void _makeNodeNamesUnique() {
+    if (_children.length <= 1) {
+      return;
+    }
+
+    final nameCounts = <String, int>{};
+    bool hasAmbigious = false;
+
+    // Calculate the counts of all node names
+    for (final node in _children) {
+      var nodKey = node.originalKey;
+      if (nameCounts.containsKey(nodKey)) {
+        final count = nameCounts[nodKey]!;
+        if (count == 1) {
+          hasAmbigious = true;
+        }
+
+        nameCounts[nodKey] = count + 1;
+        nodKey = '${nodKey}_$count';
+      } else {
+        nameCounts[nodKey] = 1;
+      }
+    }
+
+    if (!hasAmbigious) {
+      return;
+    }
+
+    // Rename all nodes that have duplicates
+    final counts = <String, int>{};
+
+    for (final key in nameCounts.keys) {
+      counts[key] = 0;
+    }
+
+    for (var i = 0; i < _children.length; i++) {
+      final node = _children[i];
+      var nodKey = node.originalKey;
+      if (nameCounts[nodKey]! > 1) {
+        final count = counts[nodKey]!;
+        counts[nodKey] = count + 1;
+        nodKey = '$nodKey$count';
+      }
+      node.key = nodKey;
+    }
+  }
 }

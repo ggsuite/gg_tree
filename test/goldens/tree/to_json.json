@@ -1,5 +1,6 @@
 {
   "key": "root",
+  "originalKey": "root",
   "isReadOnly": false,
   "_data": {
     "stringValue": "Hello, World",
@@ -12,6 +13,7 @@
   "_children": [
     {
       "key": "child",
+      "originalKey": "child",
       "isReadOnly": false,
       "_data": {
         "objectValue": {
@@ -50,6 +52,7 @@
       "_children": [
         {
           "key": "grandChild",
+          "originalKey": "grandChild",
           "isReadOnly": false,
           "_data": {
             "name": "John Doe",

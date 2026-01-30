@@ -12,6 +12,7 @@
 
 - Publish to pub.dev
 - Basic implementation
+- Auto rename nodes on same keys
 
 ## [1.0.0] - 2025-07-12
 
