@@ -6,6 +6,7 @@
 
 - Add .gitattributes file
 - Add TreeTools
+- Add deepCopy
 
 ### Changed
 

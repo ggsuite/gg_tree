@@ -329,5 +329,27 @@ void main() {
         expect(json2, json);
       });
     });
+
+    group('deepCopy', () {
+      test('creates an identical copy of the tree', () {
+        final copy = tree.deepCopy();
+
+        // Check that the copy is not the same instance
+        expect(copy, isNot(same(tree)));
+
+        // Check that the structure is identical
+        expect(copy.key, tree.key);
+        expect(copy.value.toJson(), tree.value.toJson());
+        expect(copy.children.length, tree.children.length);
+
+        final originalChild = tree.children.first;
+        final copiedChild = copy.children.first;
+
+        expect(copiedChild, isNot(same(originalChild)));
+        expect(copiedChild.key, originalChild.key);
+        expect(copiedChild.value.toJson(), originalChild.value.toJson());
+        expect(copiedChild.parent, same(copy));
+      });
+    });
   });
 }

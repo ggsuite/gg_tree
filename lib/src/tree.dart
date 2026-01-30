@@ -107,7 +107,11 @@ class Tree<T extends TreeData> {
   Json toJson() => _toJson(this);
 
   /// Creates a [JsonTree] from a JSON map
-  Tree fromJson(Json json) => _fromJson(json);
+  Tree<T> fromJson(Json json) => _fromJson(json);
+
+  // ...........................................................................
+  /// Creates a deep copy of this tree
+  Tree<T> deepCopy() => _deepCopy(this);
 
   // ######################
   // Private
@@ -231,4 +235,7 @@ class Tree<T extends TreeData> {
       throw Exception('Tree node "$key" is readonly');
     }
   }
+
+  // ...........................................................................
+  Tree<T> _deepCopy(Tree<T> tree) => fromJson(toJson());
 }
