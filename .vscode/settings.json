@@ -40,7 +40,7 @@
   // ##############
 
   "github.copilot.enable": {
-    "*": true,
+    "*": false,
     "plaintext": false,
     "markdown": false,
     "scminput": false
@@ -245,7 +245,6 @@
   // #############
 
   "dart.debugExternalLibraries": false,
-  "dart.sdkPath": "/Users/gatzsche/dev/flutter/bin/cache/dart-sdk",
   "dart.warnWhenEditingFilesOutsideWorkspace": false,
   "dart.analyzerLogFile": "~/tmp/analyzer.txt",
   "[dart]": {
@@ -278,7 +277,7 @@
   "dart.flutterGenerateLocalizationsOnSave": "all",
   "dart.promptToGetPackages": false,
   "dart.showTodos": false,
-  "dart.debugSdkLibraries": true,
+  "dart.debugSdkLibraries": false,
   "dart.debugExternalPackageLibraries": true,
   "dart.openDevTools": "flutter",
 
@@ -286,7 +285,7 @@
   // PSI Header
   // #############
 
-  "psi-header.variables": [["author", "Dr. Gabriel Gatzsche"]],
+  "psi-header.variables": [["author", "ggsuite"]],
 
   "markdown.extension.toc.levels": "2..3",
   // ###########
@@ -366,7 +365,7 @@
       "language": "xml",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
@@ -376,7 +375,7 @@
       "language": "html",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
@@ -386,7 +385,7 @@
       "language": "typescript",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
@@ -396,7 +395,7 @@
       "language": "javascript",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
@@ -406,7 +405,7 @@
       "language": "scss",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
@@ -416,7 +415,7 @@
       "language": "dart",
       "template": [
         "@license",
-        "Copyright (c) <<year>> Dr. Gabriel Gatzsche",
+        "Copyright (c) <<year>> ggsuite",
         "",
         "Use of this source code is governed by terms that can be",
         "found in the LICENSE file in the root of this package."
