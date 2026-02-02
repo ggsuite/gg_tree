@@ -4,9 +4,9 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'package:gg_direct_json/gg_direct_json.dart';
 import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/src/tree_data.dart';
+import 'package:gg_tree/src/tree_query.dart';
 
 /// A tree of composition items reflecting the generator hierarchy
 
@@ -41,28 +41,25 @@ class Tree<T extends TreeData> {
     originalKey: originalKey,
   );
 
-  // ...........................................................................
   /// Example instance for test purposes
-  static Tree<ExampleData> example({String? key}) {
-    final root = Tree<ExampleData>.root(
-      key: key ?? 'root',
-      value: ExampleData(exampleJsonPrimitive),
-    );
+  static Tree<ExampleData> example({String? key}) =>
+      Tree.exampleNodes(key: key).$4;
 
-    final child = Tree<ExampleData>(
-      key: 'child',
-      parent: root,
-      value: ExampleData(exampleJsonNested0),
-    );
+  /// Example instance for test purposes
+  static (
+    Tree<ExampleData> root,
+    Tree<ExampleData> grandpa,
+    Tree<ExampleData> dad,
+    Tree<ExampleData> me,
+    Tree<ExampleData> child,
+    Tree<ExampleData> grandchild,
+  )
+  exampleNodes({String? key}) => _exampleNodes(key: key);
 
-    Tree<ExampleData>(
-      key: 'grandChild',
-      parent: child,
-      value: ExampleData(exampleJsonNested1),
-    );
-
-    return root;
-  }
+  // ...........................................................................
+  /// Returns a string representation of this node
+  @override
+  String toString() => key;
 
   // ...........................................................................
   /// The key of this node
@@ -73,6 +70,9 @@ class Tree<T extends TreeData> {
 
   /// Returns the value of this node
   T get value => _data;
+
+  /// Returns the value as JSON
+  Json get valueJson => _data.toJson();
 
   // ...........................................................................
   /// Set the parent
@@ -91,6 +91,15 @@ class Tree<T extends TreeData> {
   /// Returns the parent node or null if this is the root
   Tree<T>? get parent => _parent;
 
+  /// Returns the root node
+  Tree<T> get root {
+    Tree<T> current = this;
+    while (current.parent != null) {
+      current = current.parent!;
+    }
+    return current;
+  }
+
   /// Returns a list of children
   Iterable<Tree<T>> get children => _children;
 
@@ -100,6 +109,29 @@ class Tree<T extends TreeData> {
     _makeNodeNamesUnique();
   }
 
+  /// Returns a child by its key or null if not found
+  Tree<T>? childByKey(String key) {
+    for (final child in _children) {
+      if (child.key == key) {
+        return child;
+      }
+    }
+    return null;
+  }
+
+  // ...........................................................................
+  /// Finds a child node by path segments
+  Tree<T>? relative(Iterable<String> path) => _relative(path);
+
+  /// Finds a child node by absolute path segments from the root
+  Tree<T>? absolute(Iterable<String> path) => _absolute(path);
+
+  /// Finds a node by path segments. Starts at this node or at the root.
+  Tree<T>? findNodeOrNull(String path) => _findNode(path);
+
+  /// Finds a node by path segments. Throws when the node could not be found.
+  Tree<T> findNode(String path) => _findNode(path, throwWhenNotFound: true)!;
+
   // ...........................................................................
   /// Returns a json value for this query
   V? getOrNull<V>(String query) => _getOrNull(query);
@@ -108,9 +140,9 @@ class Tree<T extends TreeData> {
   V get<V>(String query) => _get(query);
 
   /// Write a value into this node
-  void set<V>(String key, V value) {
+  void set<V>(String key, V value, {bool extend = false}) {
     _throwWhenReadonly();
-    _set<V>(key, value);
+    _set<V>(key, value, extend: extend);
   }
 
   // ...........................................................................
@@ -150,6 +182,81 @@ class Tree<T extends TreeData> {
   // ######################
   // Private
   // ######################
+
+  static (
+    Tree<ExampleData> root,
+    Tree<ExampleData> grandpa,
+    Tree<ExampleData> dad,
+    Tree<ExampleData> me,
+    Tree<ExampleData> child,
+    Tree<ExampleData> grandchild,
+  )
+  _exampleNodes({String? key}) {
+    final root = Tree<ExampleData>.root(
+      key: key ?? 'root',
+      value: ExampleData({
+        'me': 'root',
+        'hiRoot': 'Hi from root.',
+        'isAncestor': true,
+      }),
+    );
+
+    final grandpa = Tree<ExampleData>(
+      parent: root,
+      key: 'grandpa',
+      value: ExampleData({
+        'me': 'grandpa',
+        'hiGrandpa': 'Hi from grandpa.',
+        'isAncestor': false,
+      }),
+    );
+
+    final dad = Tree<ExampleData>(
+      parent: grandpa,
+      key: 'dad',
+      value: ExampleData({
+        'me': 'dad',
+        'hiDad': 'Hi from dad.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
+    final me = Tree<ExampleData>(
+      parent: dad,
+      key: 'me',
+      value: ExampleData({
+        'me': 'me',
+        'hiMe': 'Hi from me.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
+    final child = Tree<ExampleData>(
+      parent: me,
+      key: 'child',
+      value: ExampleData({
+        'me': 'child',
+        'hiChild': 'Hi from child.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
+    final grandchild = Tree<ExampleData>(
+      parent: child,
+      key: 'grandchild',
+      value: ExampleData({
+        'me': 'grandchild',
+        'hiGrandchild': 'Hi from grandchild.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
+    return (root, grandpa, dad, me, child, grandchild);
+  }
 
   // ...........................................................................
   final List<Tree<T>> _children;
@@ -224,47 +331,45 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  V? _getOrNull<V>(String query) {
-    if (query.startsWith('.')) {
-      query = query.substring(1);
-      final json = _data.toJson();
-      final result = DirectJson(json: json).get<V>(query);
+  V? _getOrNull<V>(String query, {bool throwWhenNotFound = false}) {
+    final q = TreeQuery(query);
 
-      return result;
+    // Collect all nodes the query needs to be applied to
+    late final Iterable<Tree<T>> nodes;
+    if (q.searchToRoot) {
+      nodes = ancestors(
+        includeRoot: true,
+        includeSelf: true,
+        startAtRoot: false,
+      );
+    } else {
+      final node = _findNode(q.node);
+      nodes = node == null ? [] : [node];
     }
+
+    // Iterate all nodes and apply the query
+    for (final node in nodes) {
+      final value = node.valueJson.getOrNull<V>(q.data);
+      if (value != null) {
+        return value;
+      }
+    }
+
     return null;
   }
 
   // ...........................................................................
   V _get<V>(String query) {
-    final result = _getOrNull<V>(query);
-    if (result == null) {
-      throw Exception(
-        ['Cannot resolve query "$query" for tree with key "$key"'].join('\n'),
-      );
-    }
-
+    final result = _getOrNull<V>(query, throwWhenNotFound: true) as V;
     return result;
   }
 
   // ...........................................................................
-  void _set<V>(String query, V value) {
-    if (query == '.') {
-      _data = _data.fromJson(value as Json) as T;
-      return;
-    } else if (query.startsWith('.')) {
-      query = query.substring(1);
-
-      final json = _data.toJson();
-      DirectJson(json: json).set(query, value);
-      _data = _data.fromJson(json) as T;
-    } else {
-      // coverage:ignore-start
-      throw UnimplementedError(
-        'Cannot set value for query "$query" for tree with key "$key"',
-      );
-      // coverage:ignore-end
-    }
+  void _set<V>(String query, V value, {bool extend = false}) {
+    final q = TreeQuery(query);
+    final node = findNode(q.node);
+    final newJson = node.valueJson.set<V>(q.data, value, extend: extend);
+    node._data = node._data.fromJson(newJson) as T;
   }
 
   // ...........................................................................
@@ -334,5 +439,218 @@ class Tree<T extends TreeData> {
       }
       node.key = nodKey;
     }
+  }
+
+  // ...........................................................................
+  Tree<T>? _relative(Iterable<String> path, {bool throwWhenNotFound = false}) {
+    Tree<T> current = this;
+
+    final okSegments = <String>[];
+
+    for (final segment in path) {
+      if (segment.isEmpty) {
+        okSegments.add(segment);
+        continue;
+      }
+
+      if (segment == '.') {
+        okSegments.add(segment);
+        continue;
+      } else if (segment == '..') {
+        final parent = current.parent;
+        if (parent == null) {
+          return null;
+        }
+
+        current = parent;
+        okSegments.add(segment);
+        continue;
+      }
+
+      final child = current.childByKey(segment);
+      if (child == null) {
+        if (throwWhenNotFound) {
+          _throwRelativePathNotFound(path, current, okSegments);
+        }
+        return null;
+      }
+
+      current = child;
+      okSegments.add(segment);
+    }
+    return current;
+  }
+
+  // ...........................................................................
+  Tree<T>? _absolute(Iterable<String> path) => root.relative(path);
+
+  // ...........................................................................
+  Tree<T>? _findNode(String path, {bool throwWhenNotFound = false}) {
+    if (path.isEmpty) {
+      if (throwWhenNotFound) {
+        throw Exception('Path is empty');
+      }
+
+      return null;
+    }
+
+    final segments = path.split('/').where((e) => e.isNotEmpty);
+
+    final fromRoot = path.startsWith('/');
+
+    if (fromRoot) {
+      return _findNodeAbsolute(segments, throwWhenNotFound);
+    } else {
+      return _findNodeRelative(segments, throwWhenNotFound);
+    }
+  }
+
+  // ...........................................................................
+  Tree<T>? _findNodeRelative(Iterable<String> path, bool throwWhenNotFound) {
+    if (path.first == '.' || path.first == '..') {
+      return _relative(path, throwWhenNotFound: throwWhenNotFound);
+    }
+
+    late final Tree<T>? start;
+    if (path.first == '...') {
+      start = parent;
+      path = path.skip(1);
+      if (path.isEmpty) {
+        throw Exception('Path "..." must be followed by at least one segment');
+      }
+    } else {
+      start = this;
+    }
+
+    var current = start;
+    while (current != null) {
+      final result = current._relative(path);
+      if (result != null) {
+        return result;
+      }
+      current = current.parent;
+    }
+
+    return null;
+  }
+
+  // ...........................................................................
+  /// Returns all ancestors of this node
+  Iterable<Tree<T>> ancestors({
+    bool includeSelf = false,
+    bool includeRoot = true,
+    bool startAtRoot = false,
+  }) {
+    var result = <Tree<T>>[];
+    Tree<T>? current = includeSelf ? this : parent;
+    while (current != null) {
+      result.add(current);
+      current = current.parent;
+    }
+
+    result = includeRoot ? result : result.sublist(0, result.length - 1);
+    return startAtRoot ? result.toList().reversed : result;
+  }
+
+  // ...........................................................................
+  Tree<T>? _findNodeAbsolute(Iterable<String> path, bool throwWhenNotFound) {
+    // Get all ancestors from root to this node
+    var nodes = ancestors(
+      includeSelf: true,
+      includeRoot: false,
+      startAtRoot: true,
+    );
+
+    Iterable<String> p = [...path];
+
+    // Return root when path is empty
+    if (p.isEmpty) {
+      return root;
+    }
+
+    final okSegments = <String>[];
+
+    // Iterate through all ancestors
+    for (var i = 0; i < nodes.length; i++) {
+      // Get current and next node
+      final node = nodes.elementAt(i);
+      final nextNode = nodes.elementAtOrNull(i + 1);
+      final segment = p.first;
+      final nextSegment = p.elementAtOrNull(1);
+
+      // Check for match
+      if (node.key == segment || segment == '*' || segment == '**') {
+        okSegments.add(segment);
+
+        // Jump to next search segment
+        final nextSegmentMatches = nextNode?.key == nextSegment;
+        p = segment == '**' && !nextSegmentMatches && nextNode != null
+            ? p
+            : p.skip(1);
+
+        // If this is the last segment, return the node
+        if (p.isEmpty) {
+          return node;
+        }
+
+        // Continue to next ancestor
+        continue;
+      }
+      // If no match
+      else {
+        // throw when not found
+        if (throwWhenNotFound) {
+          _throwAbsolutePathNotFound(path, node, okSegments);
+        }
+
+        // or return null
+        return null;
+      }
+    }
+
+    final result = nodes.last.relative(['.', ...p]);
+
+    if (result == null && throwWhenNotFound) {
+      _throwAbsolutePathNotFound(path, nodes.last, okSegments);
+    }
+    return result;
+  }
+
+  // ...........................................................................
+  void _throwAbsolutePathNotFound(
+    Iterable<String> path,
+    Tree<dynamic> node,
+    List<String> okSegments,
+  ) {
+    final prefix = okSegments.join('/');
+    final possiblePaths = node.ls().map((e) => '  - /$prefix$e');
+
+    throw Exception(
+      [
+        'Could not find node "/${path.join('/')}"',
+        '',
+        'Possible paths:',
+        ...possiblePaths,
+      ].join('\n'),
+    );
+  }
+
+  // ...........................................................................
+  void _throwRelativePathNotFound(
+    Iterable<String> path,
+    Tree<dynamic> node,
+    List<String> okSegments,
+  ) {
+    final prefix = okSegments.join('/');
+    final possiblePaths = node.ls().map((e) => '  - $prefix$e');
+
+    throw Exception(
+      [
+        'Could not find node "${path.join('/')}"',
+        '',
+        'Possible paths:',
+        ...possiblePaths,
+      ].join('\n'),
+    );
   }
 }

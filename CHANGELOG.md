@@ -7,12 +7,14 @@
 - Add .gitattributes file
 - Add TreeTools
 - Add deepCopy
+- Add various queries
 
 ### Changed
 
 - Publish to pub.dev
 - Basic implementation
 - Auto rename nodes on same keys
+- Work on queries
 
 ## [1.0.0] - 2025-07-12
 
