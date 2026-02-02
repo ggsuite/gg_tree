@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add MIT License
+
 ### Changed
 
 - Prepare publishing to pub.dev
