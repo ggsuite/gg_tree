@@ -5,27 +5,31 @@
 // found in the LICENSE file in the root of this package.
 
 import 'package:gg_golden/gg_golden.dart';
-import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Tree', () {
-    late Tree<ExampleData> tree;
     late Tree<ExampleData> root;
+    late Tree<ExampleData> grandpa;
+    late Tree<ExampleData> dad;
+    late Tree<ExampleData> me;
     late Tree<ExampleData> child;
-    late Tree<ExampleData> grandChild;
+    late Tree<ExampleData> grandchild;
 
     setUp(() {
-      tree = Tree.example();
-      root = tree;
-      child = root.children.first;
-      grandChild = child.children.first;
+      (root, grandpa, dad, me, child, grandchild) = Tree.exampleNodes();
+    });
+
+    group('toString', () {
+      test('should return a string representation of the tree', () {
+        expect(me.toString(), 'me');
+      });
     });
 
     group('Tree(), Tree.root(), Tree.example()', () {
       test('should create an instance', () {
-        expect(tree, isNotNull);
+        expect(root, isNotNull);
       });
 
       group('throws, when key is not a valid JSON key', () {
@@ -91,19 +95,19 @@ void main() {
       group('reassigns all children to the new parent', () {
         test('for root constructors', () {
           // Before
-          expect(child.parent, same(root));
-          expect(grandChild.parent, same(child));
+          expect(child.parent, same(me));
+          expect(grandchild.parent, same(child));
 
           // Act
           final newRoot = Tree<ExampleData>.root(
             key: 'newRoot',
             value: ExampleData.example(),
-            children: [child, grandChild],
+            children: [child, grandchild],
           );
 
           // After
           expect(child.parent, same(newRoot));
-          expect(grandChild.parent, same(newRoot));
+          expect(grandchild.parent, same(newRoot));
         });
       });
     });
@@ -112,121 +116,391 @@ void main() {
       test('returns the key', () {
         expect(root.key, 'root');
         expect(child.key, 'child');
-        expect(grandChild.key, 'grandChild');
+        expect(grandchild.key, 'grandchild');
       });
     });
 
     group('value', () {
       test('returns the value', () {
-        expect(root.value.toJson(), exampleJsonPrimitive);
-        expect(child.value.toJson(), exampleJsonNested0);
-        expect(grandChild.value.toJson(), exampleJsonNested1);
+        expect(root.value.toJson(), {
+          'me': 'root',
+          'hiRoot': 'Hi from root.',
+          'isAncestor': true,
+        });
+        expect(child.value.toJson(), {
+          'me': 'child',
+          'hiChild': 'Hi from child.',
+          'isAncestor': false,
+          'nums': {
+            'string': 'Hello, World',
+            'int': 42,
+            'double': 3.14159,
+            'true': true,
+            'false': false,
+            'null': null,
+          },
+        });
+        expect(grandchild.value.toJson(), {
+          'me': 'grandchild',
+          'hiGrandchild': 'Hi from grandchild.',
+          'isAncestor': false,
+          'nums': {
+            'string': 'Hello, World',
+            'int': 42,
+            'double': 3.14159,
+            'true': true,
+            'false': false,
+            'null': null,
+          },
+        });
       });
     });
 
     group('parent', () {
       test('returns the parent', () {
         expect(root.parent, isNull);
-        expect(child.parent, same(root));
-        expect(grandChild.parent, same(child));
+        expect(child.parent, same(me));
+        expect(grandchild.parent, same(child));
       });
     });
 
     group('children', () {
       test('returns the children', () {
         expect(root.children.length, 1);
-        expect(root.children.first, same(child));
-        expect(child.children.length, 1);
-        expect(child.children.first, same(grandChild));
-        expect(grandChild.children.length, 0);
+        expect(root.children.first, same(grandpa));
+        expect(grandpa.children.length, 1);
+        expect(grandpa.children.first, same(dad));
+        expect(grandchild.children.length, 0);
       });
     });
 
-    group('getOrNull(query)', () {
-      group('returns data', () {
-        group('with a query', () {
-          group('starting with "."', () {
-            test('from simple json data', () {
-              expect(root.getOrNull<int>('.integerValue'), 42);
-              expect(root.getOrNull<double>('.doubleValue'), 3.14159);
-              expect(root.getOrNull<bool>('.booleanTrue'), isTrue);
-              expect(root.getOrNull<bool>('.booleanFalse'), isFalse);
-              expect(root.getOrNull<dynamic>('.nullValue'), null);
-            });
+    group('root', () {
+      test('returns the root node', () {
+        expect(root.root, same(root));
+        expect(grandpa.root, same(root));
+        expect(dad.root, same(root));
+        expect(me.root, same(root));
+        expect(child.root, same(root));
+        expect(grandchild.root, same(root));
+      });
+    });
 
-            test('from nested json data', () {
-              expect(
-                child.getOrNull<String>('.objectValue.nestedString'),
-                'nested',
-              );
-            });
+    group('relative', () {
+      test('returns the child with the given key', () {
+        expect(me.relative(['']), same(me));
+        expect(me.relative([]), same(me));
+        expect(me.relative(['child']), same(child));
+        expect(me.relative(['.', 'child']), same(child));
+        expect(me.relative(['..', 'me']), same(me));
+        expect(me.relative(['..', '..', 'dad']), same(dad));
+        expect(me.relative(['child', 'grandchild']), same(grandchild));
+        expect(me.relative(['child', '..', 'child']), same(child));
+        expect(me.relative(['...', 'child']), isNull);
+      });
+    });
+
+    group('absolute', () {
+      test('returns the node at the given absolute path', () {
+        expect(root.absolute([]), same(root));
+        expect(root.absolute(['root']), isNull);
+        expect(root.absolute(['grandpa']), same(grandpa));
+        expect(root.absolute(['grandpa', 'dad', 'me', 'child']), same(child));
+        expect(
+          grandpa.absolute(['grandpa', 'dad', 'me', 'child']),
+          same(child),
+        );
+
+        expect(dad.absolute(['grandpa', 'dad', 'me', 'child']), same(child));
+
+        expect(
+          me.absolute(['grandpa', 'dad', 'me', 'child', 'grandchild']),
+          same(grandchild),
+        );
+        expect(root.absolute(['nonExisting']), isNull);
+        expect(root.absolute(['grandpa', 'nonExisting']), isNull);
+      });
+    });
+
+    group('findNode(path)', () {
+      test('throws when path is empty', () {
+        var message = <String>[];
+        try {
+          me.findNode('');
+        } catch (e) {
+          message = (e as dynamic).message.toString().trim().split('\n');
+        }
+
+        expect(message, ['Path is empty']);
+      });
+
+      group('absolute', () {
+        test('returns same result as findNodeOrNull', () {
+          final a = me.findNode('/grandpa/dad/me/child');
+          final b = me.findNodeOrNull('/grandpa/dad/me/child');
+          expect(a, same(b));
+          expect(a, isNotNull);
+        });
+
+        group('throws when node is not found', () {
+          test('and a child node is not found', () {
+            var messages = <String>[];
+            try {
+              me.findNode('/grandpa/dad/me/unknown');
+            } catch (e) {
+              messages = ((e as dynamic).message as String).split('\n');
+            }
+
+            expect(messages, [
+              'Could not find node "/grandpa/dad/me/unknown"',
+              '',
+              'Possible paths:',
+              '  - /grandpa/dad/me/',
+              '  - /grandpa/dad/me/child',
+              '  - /grandpa/dad/me/child/grandchild',
+            ]);
+          });
+
+          test('and an ancestor node is not found', () {
+            var message = <String>[];
+            try {
+              me.findNode('/grandpa/dad/unknown');
+            } catch (e) {
+              message = (e as dynamic).message.toString().trim().split('\n');
+            }
+
+            expect(message, [
+              'Could not find node "/grandpa/dad/unknown"',
+              '',
+              'Possible paths:',
+              '  - /grandpa/dad/',
+              '  - /grandpa/dad/child',
+              '  - /grandpa/dad/child/grandchild',
+            ]);
           });
         });
       });
 
-      group('returns null on unknown query', () {
-        test('from simple json data', () {
-          expect(root.getOrNull<int>('.unknown'), isNull);
+      group('relative', () {
+        test('returns same result as findNodeOrNull', () {
+          final a = me.findNode('../me/child');
+          final b = me.findNodeOrNull('../me/child');
+          expect(a, same(b));
+          expect(a, isNotNull);
         });
 
-        test('from nested json data', () {
-          expect(child.getOrNull<String>('.objectValue.unknown'), isNull);
-        });
-      });
-    });
-
-    group('get(query)', () {
-      group('returns data', () {
-        group('with a query', () {
-          group('starting with "."', () {
-            test('from simple json data', () {
-              expect(root.get<int>('.integerValue'), 42);
-              expect(root.get<double>('.doubleValue'), 3.14159);
-              expect(root.get<bool>('.booleanTrue'), isTrue);
-              expect(root.get<bool>('.booleanFalse'), isFalse);
-            });
-
-            test('from nested json data', () {
-              expect(child.get<String>('.objectValue.nestedString'), 'nested');
-            });
-          });
-        });
-      });
-
-      group('throws on unknown query', () {
-        test('from simple json data', () {
+        test('throws when node is not found', () {
           var messages = <String>[];
           try {
-            root.get<int>('.unknown');
+            me.findNode('../me/unknown');
           } catch (e) {
             messages = ((e as dynamic).message as String).split('\n');
           }
 
           expect(messages, [
-            'Cannot resolve query ".unknown" for tree with key "root"',
+            'Could not find node "../me/unknown"',
+            '',
+            'Possible paths:',
+            '  - ../me/',
+            '  - ../me/child',
+            '  - ../me/child/grandchild',
           ]);
         });
       });
     });
 
-    group('set(key, value)', () {
-      group('writes data into the tree', () {
-        group('with just a "." query', () {
-          test('write the complete node', () {
-            root.set('.', {'new': 'object'});
-            expect(root.value.data, {'new': 'object'});
-          });
-        });
-        test('with a simple non nested query', () {
-          root.set<int>('.integerValue', 123);
-          expect(root.get<int>('.integerValue'), 123);
+    group('findNodeOrNull(path)', () {
+      group('relative', () {
+        test('throws when path is just ...', () {
+          var message = <String>[];
+          try {
+            me.findNodeOrNull('...');
+          } catch (e) {
+            message = (e as dynamic).message.toString().trim().split('\n');
+          }
+
+          expect(message, [
+            'Path "..." must be followed by at least one segment',
+          ]);
         });
 
-        test('with a nested query', () {
-          expect(child.get<String>('.objectValue.nestedString'), 'nested');
-          child.set('.objectValue.nestedString', 'change');
-          expect(child.get<String>('.objectValue.nestedString'), 'change');
+        test('returns null if path is empty', () {
+          expect(me.findNodeOrNull(''), isNull);
         });
+        test('searches from self when path starts with .', () {
+          expect(me.findNodeOrNull('.'), same(me));
+          expect(me.findNodeOrNull('./child'), same(child));
+          expect(me.findNodeOrNull('./child/grandchild'), same(grandchild));
+        });
+
+        test('searches from parent when path is ..', () {
+          expect(me.findNodeOrNull('..'), same(dad));
+          expect(me.findNodeOrNull('../me'), same(me));
+          expect(me.findNodeOrNull('../me/child'), same(child));
+          expect(me.findNodeOrNull('../me/child/grandchild'), same(grandchild));
+        });
+
+        test('searches from ancestor when path starts with ...', () {
+          expect(me.findNodeOrNull('.../me'), same(me));
+          expect(me.findNodeOrNull('.../me/child'), same(child));
+          expect(
+            me.findNodeOrNull('.../me/child/grandchild'),
+            same(grandchild),
+          );
+          expect(me.findNodeOrNull('.../grandpa/dad'), same(dad));
+        });
+
+        test('allows to combine multiple .. and . operators', () {
+          expect(me.findNodeOrNull('../..'), same(grandpa));
+          expect(me.findNodeOrNull('../../dad'), same(dad));
+          expect(me.findNodeOrNull('../../dad/me/child'), same(child));
+        });
+      });
+
+      group('absolute', () {
+        test('returns root if path starts with /', () {
+          expect(me.findNodeOrNull('/'), same(root));
+        });
+        test('searches from root when path starts with /', () {
+          expect(me.findNodeOrNull('/grandpa'), same(grandpa));
+          expect(me.findNodeOrNull('/grandpa/dad/me/child'), same(child));
+          expect(
+            me.findNodeOrNull('/grandpa/dad/me/child/grandchild'),
+            same(grandchild),
+          );
+
+          expect(me.findNodeOrNull('/dad/me/child/grandchild'), isNull);
+        });
+
+        test('skips a single segments when a * is found', () {
+          expect(me.findNodeOrNull('/grandpa/**/child'), same(child));
+          expect(me.findNodeOrNull('/grandpa/*/me/child'), same(child));
+          expect(me.findNodeOrNull('/grandpa/dad/*/child'), same(child));
+          expect(me.findNodeOrNull('/grandpa/*/*/child'), same(child));
+          expect(me.findNodeOrNull('/grandpa/**/me'), same(me));
+          expect(me.findNodeOrNull('/grandpa/**/me/child'), same(child));
+          expect(me.findNodeOrNull('/**/me/child'), same(child));
+        });
+      });
+    });
+
+    group('getOrNull', () {
+      group('returns data from', () {
+        group('nodes directly', () {
+          test('using ./', () {
+            expect(me.getOrNull<String>('./#hiRoot'), isNull);
+            expect(me.getOrNull<String>('./#hiGrandpa'), isNull);
+            expect(me.getOrNull<String>('./#hiDad'), isNull);
+            expect(me.getOrNull<String>('./#hiMe'), 'Hi from me.');
+
+            expect(me.getOrNull<int>('./#nums/int'), 42);
+            expect(me.getOrNull<double>('./#nums/double'), 3.14159);
+            expect(me.getOrNull<bool>('./#nums/true'), isTrue);
+            expect(me.getOrNull<bool>('./#nums/false'), isFalse);
+          });
+
+          group('parent node', () {
+            test('using ../', () {
+              expect(me.getOrNull<String>('../#hiMe'), isNull);
+
+              expect(me.getOrNull<String>('../#hiRoot'), isNull);
+              expect(me.getOrNull<String>('../#hiGrandpa'), isNull);
+              expect(me.getOrNull<String>('../#hiDad'), 'Hi from dad.');
+
+              expect(me.getOrNull<int>('../#nums/int'), 42);
+              expect(me.getOrNull<double>('../#nums/double'), 3.14159);
+              expect(me.getOrNull<bool>('../#nums/true'), isTrue);
+              expect(me.getOrNull<bool>('../#nums/false'), isFalse);
+            });
+          });
+
+          group('self or any ancestors', () {
+            test('using no operator', () {
+              expect(me.getOrNull<String>('#hiRoot'), 'Hi from root.');
+              expect(me.getOrNull<String>('#hiGrandpa'), 'Hi from grandpa.');
+              expect(me.getOrNull<String>('#hiDad'), 'Hi from dad.');
+              expect(me.getOrNull<String>('#hiMe'), 'Hi from me.');
+
+              expect(me.getOrNull<int>('#nums/int'), 42);
+              expect(me.getOrNull<double>('#nums/double'), 3.14159);
+              expect(me.getOrNull<bool>('#nums/true'), isTrue);
+              expect(me.getOrNull<bool>('#nums/false'), isFalse);
+            });
+          });
+        });
+
+        group('child nodes', () {
+          group('i.e. from own child nodes', () {
+            test('using ./child', () {
+              expect(me.getOrNull<String>('./child#hiGrandchild'), isNull);
+              expect(me.getOrNull<String>('./child#hiChild'), 'Hi from child.');
+              expect(me.getOrNull<String>('./child#hiRoot'), isNull);
+              expect(me.getOrNull<String>('./child#hiGrandpa'), isNull);
+              expect(me.getOrNull<String>('./child#hiDad'), isNull);
+              expect(me.getOrNull<String>('./child#hiMe'), isNull);
+
+              expect(me.getOrNull<int>('./child#nums/int'), 42);
+              expect(me.getOrNull<double>('./child#nums/double'), 3.14159);
+              expect(me.getOrNull<bool>('./child#nums/true'), isTrue);
+              expect(me.getOrNull<bool>('./child#nums/false'), isFalse);
+            });
+
+            test('using ./child/grandchild', () {
+              expect(
+                me.getOrNull<String>('./child/grandchild#hiGrandchild'),
+                'Hi from grandchild.',
+              );
+
+              expect(
+                me.getOrNull<String>('./child/grandchild#hiChild'),
+                isNull,
+              );
+              expect(me.getOrNull<String>('./child/grandchild#hiRoot'), isNull);
+              expect(
+                me.getOrNull<String>('./child/grandchild#hiGrandpa'),
+                isNull,
+              );
+              expect(me.getOrNull<String>('./child/grandchild#hiDad'), isNull);
+              expect(me.getOrNull<String>('./child/grandchild#hiMe'), isNull);
+
+              expect(me.getOrNull<int>('./child/grandchild#nums/int'), 42);
+              expect(
+                me.getOrNull<double>('./child/grandchild#nums/double'),
+                3.14159,
+              );
+              expect(
+                me.getOrNull<bool>('./child/grandchild#nums/true'),
+                isTrue,
+              );
+              expect(
+                me.getOrNull<bool>('./child/grandchild#nums/false'),
+                isFalse,
+              );
+            });
+          });
+        });
+      });
+    });
+
+    group('set(key, value)', () {
+      test('writes data into the tree', () {
+        me.set('../#', {'hello': 'world'});
+        expect(dad.value.data, {'hello': 'world'});
+
+        me.set('./#', {'new': 'object'});
+        expect(me.value.data, {'new': 'object'});
+
+        me.set('./#/new', 'newValue');
+        expect(me.value.data, {'new': 'newValue'});
+
+        me.set('./#/num', 10, extend: true);
+        expect(me.value.data, {'new': 'newValue', 'num': 10});
+
+        me.set('./#/num', 11);
+        expect(me.value.data, {'new': 'newValue', 'num': 11});
+
+        me.set('/#/num', 11, extend: true);
+        expect(root.get<int>('#num'), 11);
+        expect(me.get<int>('/#num'), 11);
       });
     });
 
@@ -236,7 +510,7 @@ void main() {
           // Before
           expect(root.isReadOnly, isFalse);
           expect(child.isReadOnly, isFalse);
-          expect(grandChild.isReadOnly, isFalse);
+          expect(grandchild.isReadOnly, isFalse);
 
           // Act
           root.setReadOnly(true, recursive: true);
@@ -244,7 +518,7 @@ void main() {
           // After
           expect(root.isReadOnly, isTrue);
           expect(child.isReadOnly, isTrue);
-          expect(grandChild.isReadOnly, isTrue);
+          expect(grandchild.isReadOnly, isTrue);
         });
       });
 
@@ -253,7 +527,7 @@ void main() {
           // Before
           expect(root.isReadOnly, isFalse);
           expect(child.isReadOnly, isFalse);
-          expect(grandChild.isReadOnly, isFalse);
+          expect(grandchild.isReadOnly, isFalse);
 
           // Act
           root.setReadOnly(true, recursive: false);
@@ -261,7 +535,7 @@ void main() {
           // After
           expect(root.isReadOnly, isTrue);
           expect(child.isReadOnly, isFalse);
-          expect(grandChild.isReadOnly, isFalse);
+          expect(grandchild.isReadOnly, isFalse);
         });
       });
 
@@ -284,7 +558,7 @@ void main() {
 
           var message = <String>[];
           try {
-            root.set<int>('.integerValue', 123);
+            root.set<int>('.int', 123);
           } catch (e) {
             message = (e as dynamic).message.toString().trim().split('\n');
           }
@@ -298,7 +572,7 @@ void main() {
       test(
         'returns identical tree after serialization and deserialization',
         () async {
-          final json = tree.toJson();
+          final json = root.toJson();
           await writeGolden('to_json.json', json);
         },
       );
@@ -307,8 +581,8 @@ void main() {
     group('fromJson', () {
       test('creates a tree from json identical to the original', () async {
         // Create json from original tree
-        final json = tree.toJson();
-        final newTree = tree.fromJson(json);
+        final json = root.toJson();
+        final newTree = root.fromJson(json);
 
         // Check parents
         expect(newTree.parent, isNull);
@@ -332,17 +606,17 @@ void main() {
 
     group('deepCopy', () {
       test('creates an identical copy of the tree', () {
-        final copy = tree.deepCopy();
+        final copy = root.deepCopy();
 
         // Check that the copy is not the same instance
-        expect(copy, isNot(same(tree)));
+        expect(copy, isNot(same(root)));
 
         // Check that the structure is identical
-        expect(copy.key, tree.key);
-        expect(copy.value.toJson(), tree.value.toJson());
-        expect(copy.children.length, tree.children.length);
+        expect(copy.key, root.key);
+        expect(copy.value.toJson(), root.value.toJson());
+        expect(copy.children.length, root.children.length);
 
-        final originalChild = tree.children.first;
+        final originalChild = root.children.first;
         final copiedChild = copy.children.first;
 
         expect(copiedChild, isNot(same(originalChild)));
@@ -354,7 +628,16 @@ void main() {
 
     group('ls', () {
       test('return all paths of the tree', () {
-        expect(root.ls(), ['/', '/child', '/child/grandChild']);
+        expect(root.ls(), [
+          '/',
+          '/grandpa',
+          '/grandpa/dad',
+          '/grandpa/dad/me',
+          '/grandpa/dad/me/child',
+          '/grandpa/dad/me/child/grandchild',
+        ]);
+
+        expect(me.ls(), ['/', '/child', '/child/grandchild']);
       });
     });
 
@@ -440,6 +723,23 @@ void main() {
           expect(parent.children.elementAt(1).key, 'child1');
           expect(parent.children.elementAt(2).key, 'child2');
         });
+      });
+    });
+
+    group('ancestors', () {
+      test('returns a list of all ancestors', () {
+        expect(me.ancestors(), [dad, grandpa, root]);
+        expect(me.ancestors(includeSelf: true), [me, dad, grandpa, root]);
+        expect(me.ancestors(includeRoot: false), [dad, grandpa]);
+        expect(me.ancestors(startAtRoot: true), [root, grandpa, dad]);
+        expect(
+          me.ancestors(
+            startAtRoot: true,
+            includeRoot: false,
+            includeSelf: true,
+          ),
+          [grandpa, dad, me],
+        );
       });
     });
   });

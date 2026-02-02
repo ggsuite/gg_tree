@@ -3,110 +3,99 @@
   "originalKey": "root",
   "isReadOnly": false,
   "_data": {
-    "stringValue": "Hello, World",
-    "integerValue": 42,
-    "doubleValue": 3.14159,
-    "booleanTrue": true,
-    "booleanFalse": false,
-    "nullValue": null
+    "me": "root",
+    "hiRoot": "Hi from root.",
+    "isAncestor": true
   },
   "_children": [
     {
-      "key": "child",
-      "originalKey": "child",
+      "key": "grandpa",
+      "originalKey": "grandpa",
       "isReadOnly": false,
       "_data": {
-        "objectValue": {
-          "nestedString": "nested",
-          "nestedNull": null,
-          "nestedBoolean": true
-        },
-        "arrayValue": [
-          "text",
-          123,
-          45.6,
-          true,
-          false,
-          null,
-          {
-            "deepKey": "deepValue"
-          },
-          [
-            1,
-            2,
-            3,
-            {
-              "innerKey": "innerValue"
-            }
-          ]
-        ],
-        "numericVariants": {
-          "positive": 100,
-          "negative": -50,
-          "floating": 0.001,
-          "scientific": 1000000.0
-        },
-        "emptyObject": {},
-        "emptyArray": []
+        "me": "grandpa",
+        "hiGrandpa": "Hi from grandpa.",
+        "isAncestor": false
       },
       "_children": [
         {
-          "key": "grandChild",
-          "originalKey": "grandChild",
+          "key": "dad",
+          "originalKey": "dad",
           "isReadOnly": false,
           "_data": {
-            "name": "John Doe",
-            "age": 30,
-            "isEmployed": true,
-            "address": {
-              "street": "123 Main St",
-              "city": "Anytown",
-              "postalCode": "12345"
-            },
-            "phoneNumbers": [
-              {
-                "type": "home",
-                "number": "555-1234"
-              },
-              {
-                "type": "work",
-                "number": "555-5678"
-              }
-            ],
-            "skills": [
-              "Dart",
-              "Flutter",
-              "JSON"
-            ],
-            "groups": [
-              [
-                "admin",
-                "user"
-              ],
-              [
-                "guest"
-              ]
-            ],
-            "projects": [
-              {
-                "name": "Project A",
-                "durationMonths": 6,
-                "technologies": [
-                  "Dart",
-                  "Firebase"
-                ]
-              },
-              {
-                "name": "Project B",
-                "durationMonths": 12,
-                "technologies": [
-                  "Flutter",
-                  "GraphQL"
-                ]
-              }
-            ]
+            "me": "dad",
+            "hiDad": "Hi from dad.",
+            "isAncestor": false,
+            "nums": {
+              "string": "Hello, World",
+              "int": 42,
+              "double": 3.14159,
+              "true": true,
+              "false": false,
+              "null": null
+            }
           },
-          "_children": []
+          "_children": [
+            {
+              "key": "me",
+              "originalKey": "me",
+              "isReadOnly": false,
+              "_data": {
+                "me": "me",
+                "hiMe": "Hi from me.",
+                "isAncestor": false,
+                "nums": {
+                  "string": "Hello, World",
+                  "int": 42,
+                  "double": 3.14159,
+                  "true": true,
+                  "false": false,
+                  "null": null
+                }
+              },
+              "_children": [
+                {
+                  "key": "child",
+                  "originalKey": "child",
+                  "isReadOnly": false,
+                  "_data": {
+                    "me": "child",
+                    "hiChild": "Hi from child.",
+                    "isAncestor": false,
+                    "nums": {
+                      "string": "Hello, World",
+                      "int": 42,
+                      "double": 3.14159,
+                      "true": true,
+                      "false": false,
+                      "null": null
+                    }
+                  },
+                  "_children": [
+                    {
+                      "key": "grandchild",
+                      "originalKey": "grandchild",
+                      "isReadOnly": false,
+                      "_data": {
+                        "me": "grandchild",
+                        "hiGrandchild": "Hi from grandchild.",
+                        "isAncestor": false,
+                        "nums": {
+                          "string": "Hello, World",
+                          "int": 42,
+                          "double": 3.14159,
+                          "true": true,
+                          "false": false,
+                          "null": null
+                        }
+                      },
+                      "_children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     }
