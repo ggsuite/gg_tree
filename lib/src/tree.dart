@@ -8,8 +8,9 @@ import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/src/tree_data.dart';
 import 'package:gg_tree/src/tree_query.dart';
 
-/// A tree of composition items reflecting the generator hierarchy
+const _isValidJsonKey = isValidJsonKey;
 
+/// A tree of composition items reflecting the generator hierarchy
 class Tree<T extends TreeData> {
   /// Constructor
   factory Tree({
@@ -18,12 +19,14 @@ class Tree<T extends TreeData> {
     required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
+    bool Function(String key) isValidJsonKey = _isValidJsonKey,
   }) => Tree.base(
     key: key,
     parent: parent,
     data: data,
     children: children,
     originalKey: originalKey,
+    isValidJsonKey: isValidJsonKey,
   );
 
   // ...........................................................................
@@ -44,16 +47,18 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   /// The base constructor used by the factories
   Tree.base({
-    required this.key,
+    required String key,
     required Tree<T>? parent,
     required T data,
     Iterable<Tree<T>> children = const [],
     required String? originalKey,
+    this.isValidJsonKey = _isValidJsonKey,
   }) : originalKey = originalKey ?? key,
+       _key = key,
        _data = data,
        _children = [...children] {
     _init(parent);
-    _makeNodeNamesUnique();
+    _makeKeysUnique();
   }
 
   /// Example instance for test purposes
@@ -78,17 +83,38 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// The key of this node
-  String key;
+  String get key => _key;
+
+  /// Sets the key of this node
+  set key(String value) {
+    _throwWhenReadonly();
+    _throwIfNotValidJsonKey(value);
+    _key = value;
+    parent?._makeKeysUnique();
+  }
+
+  /// Function to validate json keys
+  final bool Function(String key) isValidJsonKey;
 
   /// The original unnamed key.
   String originalKey;
 
+  /// Returns true if this node is the root
+  bool get isRoot => parent == null;
+
   /// Returns the value of this node
   T get data => _data;
+
+  /// Sets the data
+  set data(T value) {
+    _throwWhenReadonly();
+    _data = value;
+  }
 
   /// Returns the value as JSON
   Json get dataJson => _data.toJson();
 
+  // ...........................................................................
   /// Returns the path of this node
   Iterable<String> get pathSegments => ancestors(
     includeSelf: true,
@@ -98,6 +124,13 @@ class Tree<T extends TreeData> {
 
   /// Returns the path of this node as string
   String get path => '/${pathSegments.join('/')}';
+
+  /// Returns a map of all paths to their corresponding tree nodes
+  Map<String, Tree<T>> pathToTreeMap({bool Function(Tree<T> slot)? where}) {
+    final result = <String, Tree<T>>{};
+    _pathToTreeMap([], result, where: where);
+    return result;
+  }
 
   // ...........................................................................
   /// Set the parent
@@ -110,7 +143,7 @@ class Tree<T extends TreeData> {
       _parent?._children.add(this);
     }
 
-    _parent?._makeNodeNamesUnique();
+    _parent?._makeKeysUnique();
   }
 
   /// Returns the parent node or null if this is the root
@@ -132,7 +165,7 @@ class Tree<T extends TreeData> {
   /// Returns all children to list of children
   void addChildren(Iterable<Tree<T>> children) {
     _children.addAll(children);
-    _makeNodeNamesUnique();
+    _makeKeysUnique();
   }
 
   /// Returns a child by its key or null if not found
@@ -201,25 +234,11 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// Lists all objects paths of this tree
-  List<String> ls({String prefix = ''}) {
+  List<String> ls({String prefix = '', bool Function(Tree<T> node)? where}) {
     final paths = <String>[];
 
-    _ls(paths, '');
+    _ls(paths, '.', where: where);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
-  }
-
-  // ...........................................................................
-  /// Lists all objects paths of this tree
-  Iterable<String> lsWhere(
-    bool Function(Tree<T> node)? where, {
-    String prefix = '',
-  }) {
-    final ownPath = parent == null ? '' : path;
-    final paths = lsNodesWhere(
-      where,
-    ).map((e) => e.path.replaceFirst(ownPath, '')).toList();
-
-    return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e');
   }
 
   /// List all nodes
@@ -242,6 +261,8 @@ class Tree<T extends TreeData> {
   // ######################
   // Private
   // ######################
+
+  String _key;
 
   static (
     Tree<ExampleData> root,
@@ -329,7 +350,7 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   void _init(Tree<T>? parent) {
-    throwIfNotValidJsonKey(key);
+    _throwIfNotValidJsonKey(key);
     _throwOnForbiddenKey();
     for (final child in [...children]) {
       child.parent = this;
@@ -338,9 +359,16 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
+  /// Override this method in subclasses to enforce custom key rules
   void _throwOnForbiddenKey() {
     if (key.startsWith('_')) {
       throw Exception('Key "$key" must not start with _');
+    }
+  }
+
+  void _throwIfNotValidJsonKey(String key) {
+    if (!isValidJsonKey(key)) {
+      throw Exception('$key is not a valid json identifier');
     }
   }
 
@@ -356,15 +384,21 @@ class Tree<T extends TreeData> {
     for (final child in tree.children) {
       childrenJson.add(_toJson(child));
     }
-    json['_children'] = childrenJson;
+
+    if (childrenJson.isNotEmpty) {
+      json['_children'] = childrenJson;
+    }
     return json;
   }
 
   // ...........................................................................
   Tree<T> _fromJson(Json json) {
     final ch = <Tree<T>>[];
-    for (final childJson in (json['_children'] as List).cast<Json>()) {
-      ch.add(_fromJson(childJson));
+
+    if (json['_children'] != null) {
+      for (final childJson in (json['_children'] as List).cast<Json>()) {
+        ch.add(_fromJson(childJson));
+      }
     }
 
     return Tree.base(
@@ -430,12 +464,17 @@ class Tree<T extends TreeData> {
   Tree<T> _deepCopy(Tree<T> tree) => fromJson(toJson());
 
   // ...........................................................................
-  void _ls(List<String> paths, String ownPath) {
-    final path = ownPath.isEmpty ? '/' : ownPath;
-    paths.add(path);
+  void _ls(
+    List<String> paths,
+    String ownPath, {
+    bool Function(Tree<T> node)? where,
+  }) {
+    if (where == null || where(this)) {
+      paths.add(ownPath);
+    }
 
     for (final child in children) {
-      child._ls(paths, '$ownPath/${child.key}');
+      child._ls(paths, '$ownPath/${child.key}', where: where);
     }
   }
 
@@ -449,7 +488,7 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  void _makeNodeNamesUnique() {
+  void _makeKeysUnique() {
     if (_children.length <= 1) {
       return;
     }
@@ -492,7 +531,7 @@ class Tree<T extends TreeData> {
         counts[nodKey] = count + 1;
         nodKey = '$nodKey$count';
       }
-      node.key = nodKey;
+      node._key = nodKey;
     }
   }
 
@@ -678,7 +717,7 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - /$prefix$e');
+    final possiblePaths = node.ls().map((e) => '  - /$prefix${e.substring(1)}');
 
     throw Exception(
       [
@@ -697,7 +736,7 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - $prefix$e');
+    final possiblePaths = node.ls().map((e) => '  - $prefix${e.substring(1)}');
 
     throw Exception(
       [
@@ -707,5 +746,20 @@ class Tree<T extends TreeData> {
         ...possiblePaths,
       ].join('\n'),
     );
+  }
+
+  // ...........................................................................
+  void _pathToTreeMap(
+    List<String> path,
+    Map<String, Tree<T>> result, {
+    bool Function(Tree<T> slot)? where,
+  }) {
+    final skip = where == null ? false : !where(this);
+    if (!skip) {
+      result['/${path.join('/')}'] = this;
+    }
+    for (final child in children) {
+      child._pathToTreeMap([...path, child.key], result, where: where);
+    }
   }
 }

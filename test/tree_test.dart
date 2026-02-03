@@ -184,6 +184,31 @@ void main() {
       });
     });
 
+    group('pathToTreeMap', () {
+      test('returns a map of all paths to their corresponding tree nodes', () {
+        final map = root.pathToTreeMap();
+        expect(map.length, 6);
+        expect(map['/'], same(root));
+        expect(map['/grandpa'], same(grandpa));
+        expect(map['/grandpa/dad'], same(dad));
+        expect(map['/grandpa/dad/me'], same(me));
+        expect(map['/grandpa/dad/me/child'], same(child));
+        expect(map['/grandpa/dad/me/child/grandchild'], same(grandchild));
+
+        final map2 = me.pathToTreeMap();
+        expect(map2.length, 3);
+        expect(map2['/'], same(me));
+        expect(map2['/child'], same(child));
+        expect(map2['/child/grandchild'], same(grandchild));
+
+        final map3 = me.pathToTreeMap(
+          where: (node) => node.key.startsWith('g'),
+        );
+        expect(map3.length, 1);
+        expect(map3['/child/grandchild'], same(grandchild));
+      });
+    });
+
     group('parent', () {
       test('returns the parent', () {
         expect(root.parent, isNull);
@@ -300,7 +325,7 @@ void main() {
               'Could not find node "/grandpa/dad/me/unknown"',
               '',
               'Possible paths:',
-              '  - /grandpa/dad/me/',
+              '  - /grandpa/dad/me',
               '  - /grandpa/dad/me/child',
               '  - /grandpa/dad/me/child/grandchild',
             ]);
@@ -318,7 +343,7 @@ void main() {
               'Could not find node "/grandpa/dad/unknown"',
               '',
               'Possible paths:',
-              '  - /grandpa/dad/',
+              '  - /grandpa/dad',
               '  - /grandpa/dad/child',
               '  - /grandpa/dad/child/grandchild',
             ]);
@@ -346,7 +371,7 @@ void main() {
             'Could not find node "../me/unknown"',
             '',
             'Possible paths:',
-            '  - ../me/',
+            '  - ../me',
             '  - ../me/child',
             '  - ../me/child/grandchild',
           ]);
@@ -675,29 +700,29 @@ void main() {
     group('ls', () {
       test('return all paths of the tree', () {
         expect(root.ls(), [
-          '/',
-          '/grandpa',
-          '/grandpa/dad',
-          '/grandpa/dad/me',
-          '/grandpa/dad/me/child',
-          '/grandpa/dad/me/child/grandchild',
+          '.',
+          './grandpa',
+          './grandpa/dad',
+          './grandpa/dad/me',
+          './grandpa/dad/me/child',
+          './grandpa/dad/me/child/grandchild',
         ]);
 
-        expect(me.ls(), ['/', '/child', '/child/grandchild']);
+        expect(me.ls(), ['.', './child', './child/grandchild']);
       });
-    });
 
-    group('lsWhere', () {
-      test('returns all paths matching the given condition', () {
-        expect(root.lsWhere((node) => node.key.startsWith('g')), [
-          '/grandpa',
-          '/grandpa/dad/me/child/grandchild',
-        ]);
+      group('with where', () {
+        test('returns all paths matching the given condition', () {
+          expect(root.ls(where: (node) => node.key.startsWith('g')), [
+            './grandpa',
+            './grandpa/dad/me/child/grandchild',
+          ]);
 
-        expect(me.lsWhere((node) => node.key.contains('h')), [
-          '/child',
-          '/child/grandchild',
-        ]);
+          expect(me.ls(where: (node) => node.key.contains('h')), [
+            './child',
+            './child/grandchild',
+          ]);
+        });
       });
     });
 
@@ -821,6 +846,89 @@ void main() {
           ),
           [grandpa, dad, me],
         );
+      });
+    });
+
+    group('set key, get key', () {
+      test('allows to set and get the key', () {
+        expect(me.key, 'me');
+        me.key = 'newMe';
+        expect(me.key, 'newMe');
+      });
+
+      test('throws when setting an invalid key', () {
+        var messages = <String>[];
+        try {
+          me.key = 'invalid-key';
+        } catch (e) {
+          messages = [(e as dynamic).message as String];
+        }
+
+        expect(messages, ['invalid-key is not a valid json identifier']);
+      });
+
+      test('throws when readonly is set', () {
+        me.setReadOnly(true);
+
+        var messages = <String>[];
+        try {
+          me.key = 'newKey';
+        } catch (e) {
+          messages = [(e as dynamic).message as String];
+        }
+        expect(messages, ['Tree node "me" is readonly']);
+      });
+
+      test('makes keys unique among siblings when setting key', () {
+        final parent = Tree<ExampleData>.root(
+          key: 'parent',
+          data: ExampleData.example(),
+        );
+
+        final child1 = Tree<ExampleData>.root(
+          key: 'child',
+          data: ExampleData.example(),
+        );
+        final child2 = Tree<ExampleData>.root(
+          key: 'child',
+          data: ExampleData.example(),
+        );
+
+        parent.addChildren([child1, child2]);
+
+        expect(child1.key, 'child0');
+        expect(child2.key, 'child1');
+      });
+    });
+
+    group('isRoot', () {
+      test('returns true if the node is the root node', () {
+        expect(root.isRoot, isTrue);
+        expect(grandpa.isRoot, isFalse);
+        expect(dad.isRoot, isFalse);
+        expect(me.isRoot, isFalse);
+        expect(child.isRoot, isFalse);
+        expect(grandchild.isRoot, isFalse);
+      });
+    });
+
+    group('set data', () {
+      test('allows to set the data', () {
+        me.data = ExampleData({'newKey': 'newValue'});
+
+        expect(me.data.toJson(), {'newKey': 'newValue'});
+      });
+
+      test('throws when readonly is set', () {
+        me.setReadOnly(true);
+
+        var messages = <String>[];
+        try {
+          me.data = ExampleData.example();
+        } catch (e) {
+          messages = [(e as dynamic).message as String];
+        }
+        expect(messages, ['Tree node "me" is readonly']);
       });
     });
   });
