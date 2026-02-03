@@ -15,13 +15,13 @@ class Tree<T extends TreeData> {
   factory Tree({
     required String key,
     required Tree<T> parent,
-    required T value,
+    required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
   }) => Tree.base(
     key: key,
     parent: parent,
-    value: value,
+    data: data,
     children: children,
     originalKey: originalKey,
   );
@@ -30,13 +30,13 @@ class Tree<T extends TreeData> {
   /// Constructor for a root tree
   factory Tree.root({
     required String key,
-    required T value,
+    required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
   }) => Tree.base(
     key: key,
     parent: null,
-    value: value,
+    data: data,
     children: children,
     originalKey: originalKey,
   );
@@ -46,11 +46,11 @@ class Tree<T extends TreeData> {
   Tree.base({
     required this.key,
     required Tree<T>? parent,
-    required T value,
+    required T data,
     Iterable<Tree<T>> children = const [],
     required String? originalKey,
   }) : originalKey = originalKey ?? key,
-       _data = value,
+       _data = data,
        _children = [...children] {
     _init(parent);
     _makeNodeNamesUnique();
@@ -84,10 +84,20 @@ class Tree<T extends TreeData> {
   String originalKey;
 
   /// Returns the value of this node
-  T get value => _data;
+  T get data => _data;
 
   /// Returns the value as JSON
-  Json get valueJson => _data.toJson();
+  Json get dataJson => _data.toJson();
+
+  /// Returns the path of this node
+  Iterable<String> get pathSegments => ancestors(
+    includeSelf: true,
+    includeRoot: false,
+    startAtRoot: true,
+  ).map((e) => e.key);
+
+  /// Returns the path of this node as string
+  String get path => '/${pathSegments.join('/')}';
 
   // ...........................................................................
   /// Set the parent
@@ -199,19 +209,32 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
+  /// Lists all objects paths of this tree
+  Iterable<String> lsWhere(
+    bool Function(Tree<T> node)? where, {
+    String prefix = '',
+  }) {
+    final ownPath = parent == null ? '' : path;
+    final paths = lsNodesWhere(
+      where,
+    ).map((e) => e.path.replaceFirst(ownPath, '')).toList();
+
+    return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e');
+  }
+
   /// List all nodes
-  Iterable<Tree<T>> allNodes() {
+  Iterable<Tree<T>> lsNodes() {
     final result = <Tree<T>>[];
 
-    _lsAllNodes(result);
+    _lsNodes(result);
     return result;
   }
 
   /// List all nodes where the given condition is met
-  Iterable<Tree<T>> allNodesWhere({bool Function(Tree<T> node)? where}) {
+  Iterable<Tree<T>> lsNodesWhere(bool Function(Tree<T> node)? where) {
     final result = <Tree<T>>[];
 
-    _lsAllNodes(result);
+    _lsNodes(result);
 
     return where != null ? result.where(where) : result;
   }
@@ -231,7 +254,7 @@ class Tree<T extends TreeData> {
   _exampleNodes({String? key}) {
     final root = Tree<ExampleData>.root(
       key: key ?? 'root',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'root',
         'hiRoot': 'Hi from root.',
         'isAncestor': true,
@@ -241,7 +264,7 @@ class Tree<T extends TreeData> {
     final grandpa = Tree<ExampleData>(
       parent: root,
       key: 'grandpa',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'grandpa',
         'hiGrandpa': 'Hi from grandpa.',
         'isAncestor': false,
@@ -251,7 +274,7 @@ class Tree<T extends TreeData> {
     final dad = Tree<ExampleData>(
       parent: grandpa,
       key: 'dad',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'dad',
         'hiDad': 'Hi from dad.',
         'isAncestor': false,
@@ -262,7 +285,7 @@ class Tree<T extends TreeData> {
     final me = Tree<ExampleData>(
       parent: dad,
       key: 'me',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'me',
         'hiMe': 'Hi from me.',
         'isAncestor': false,
@@ -273,7 +296,7 @@ class Tree<T extends TreeData> {
     final child = Tree<ExampleData>(
       parent: me,
       key: 'child',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'child',
         'hiChild': 'Hi from child.',
         'isAncestor': false,
@@ -284,7 +307,7 @@ class Tree<T extends TreeData> {
     final grandchild = Tree<ExampleData>(
       parent: child,
       key: 'grandchild',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'grandchild',
         'hiGrandchild': 'Hi from grandchild.',
         'isAncestor': false,
@@ -327,7 +350,7 @@ class Tree<T extends TreeData> {
     json['key'] = tree.key;
     json['originalKey'] = tree.originalKey;
     json['isReadOnly'] = tree.isReadOnly;
-    json['_data'] = tree.value.toJson();
+    json['_data'] = tree.data.toJson();
 
     final childrenJson = <Json>[];
     for (final child in tree.children) {
@@ -348,7 +371,7 @@ class Tree<T extends TreeData> {
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,
-      value: _data.fromJson(json['_data'] as Json) as T,
+      data: _data.fromJson(json['_data'] as Json) as T,
       children: ch,
     );
   }
@@ -372,7 +395,7 @@ class Tree<T extends TreeData> {
 
     // Iterate all nodes and apply the query
     for (final node in nodes) {
-      final value = node.valueJson.getOrNull<V>(q.data);
+      final value = node.dataJson.getOrNull<V>(q.data);
       if (value != null) {
         return value;
       }
@@ -391,7 +414,7 @@ class Tree<T extends TreeData> {
   void _set<V>(String query, V value, {bool extend = false}) {
     final q = TreeQuery(query);
     final node = findNode(q.node);
-    final newJson = node.valueJson.set<V>(q.data, value, extend: extend);
+    final newJson = node.dataJson.set<V>(q.data, value, extend: extend);
     node._data = node._data.fromJson(newJson) as T;
   }
 
@@ -417,11 +440,11 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  void _lsAllNodes(List<Tree<T>> nodes) {
+  void _lsNodes(List<Tree<T>> nodes) {
     nodes.add(this);
 
     for (final child in children) {
-      child._lsAllNodes(nodes);
+      child._lsNodes(nodes);
     }
   }
 

@@ -4,11 +4,12 @@
 
 ### Added
 
-- Add allNodes and allNodesWhere
+- Add lsNodes and lsNodesWhere
 
 ### Changed
 
 - kidney: changed references to git
+- Rename value into data
 
 ## [1.0.1] - 2026-02-02
 
