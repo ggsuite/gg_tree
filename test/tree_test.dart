@@ -292,16 +292,50 @@ void main() {
       });
     });
 
-    group('findNode(path)', () {
-      test('throws when path is empty', () {
-        var message = <String>[];
+    group('childByPathOrNull', () {
+      test('returns the child node at the given path or null if not found', () {
+        expect(me.childByPathOrNull('/'), same(me));
+        expect(me.childByPathOrNull('./'), same(me));
+        expect(me.childByPathOrNull('.'), same(me));
+        expect(me.childByPathOrNull('..'), same(dad));
+        expect(me.childByPathOrNull('child'), same(child));
+        expect(me.childByPathOrNull('child/grandchild'), same(grandchild));
+        expect(me.childByPathOrNull('unknown'), isNull);
+      });
+    });
+
+    group('childByPath', () {
+      test('returns the child node at the given path', () {
+        expect(me.childByPath('/'), same(me));
+        expect(me.childByPath('./'), same(me));
+        expect(me.childByPath('.'), same(me));
+        expect(me.childByPath('..'), same(dad));
+        expect(me.childByPath('child'), same(child));
+        expect(me.childByPath('child/grandchild'), same(grandchild));
+      });
+
+      test('throws when the child node is not found', () {
+        var messages = <String>[];
         try {
-          me.findNode('');
+          me.childByPath('unknown');
         } catch (e) {
-          message = (e as dynamic).message.toString().trim().split('\n');
+          messages = ((e as dynamic).message as String).split('\n');
         }
 
-        expect(message, ['Path is empty']);
+        expect(messages, [
+          'Could not find node "unknown"',
+          '',
+          'Possible paths:',
+          '  - ',
+          '  - /child',
+          '  - /child/grandchild',
+        ]);
+      });
+    });
+
+    group('findNode(path)', () {
+      test('Empty paths are pointed to self', () {
+        expect(me.findNode(''), same(me));
       });
 
       group('absolute', () {
@@ -394,8 +428,8 @@ void main() {
           ]);
         });
 
-        test('returns null if path is empty', () {
-          expect(me.findNodeOrNull(''), isNull);
+        test('returns self if path is empty', () {
+          expect(me.findNodeOrNull(''), same(me));
         });
         test('searches from self when path starts with .', () {
           expect(me.findNodeOrNull('.'), same(me));

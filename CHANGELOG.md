@@ -5,6 +5,7 @@
 ### Added
 
 - Add lsNodes and lsNodesWhere
+- Add childByPathOrNull
 
 ### Changed
 

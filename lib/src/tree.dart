@@ -182,6 +182,14 @@ class Tree<T extends TreeData> {
   bool hasChildWithKey(String key) => childByKey(key) != null;
 
   // ...........................................................................
+  /// Returns the child node by path or null if not found
+  Tree<T>? childByPathOrNull(String path) =>
+      _childByPath(path, throwWhenNotFound: false);
+
+  /// Returns the child nod by path or throws if not found
+  Tree<T> childByPath(String path) =>
+      _childByPath(path, throwWhenNotFound: true)!;
+
   /// Finds a child node by path segments
   Tree<T>? relative(Iterable<String> path) => _relative(path);
 
@@ -578,14 +586,15 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   Tree<T>? _absolute(Iterable<String> path) => root.relative(path);
 
+  Tree<T>? _childByPath(String path, {bool throwWhenNotFound = false}) {
+    final segments = path.split('/').where((e) => e.isNotEmpty);
+    return _relative(segments, throwWhenNotFound: throwWhenNotFound);
+  }
+
   // ...........................................................................
   Tree<T>? _findNode(String path, {bool throwWhenNotFound = false}) {
     if (path.isEmpty) {
-      if (throwWhenNotFound) {
-        throw Exception('Path is empty');
-      }
-
-      return null;
+      path = '.';
     }
 
     final segments = path.split('/').where((e) => e.isNotEmpty);
