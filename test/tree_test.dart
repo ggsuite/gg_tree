@@ -174,6 +174,24 @@ void main() {
       });
     });
 
+    group('hasChildWithKey', () {
+      test('returns true if a child with the given key exists', () {
+        expect(root.hasChildWithKey('grandpa'), isTrue);
+        expect(grandpa.hasChildWithKey('dad'), isTrue);
+        expect(dad.hasChildWithKey('me'), isTrue);
+        expect(me.hasChildWithKey('child'), isTrue);
+        expect(child.hasChildWithKey('grandchild'), isTrue);
+      });
+
+      test('returns false if a child with the given key does not exist', () {
+        expect(root.hasChildWithKey('dad'), isFalse);
+        expect(grandpa.hasChildWithKey('me'), isFalse);
+        expect(dad.hasChildWithKey('child'), isFalse);
+        expect(me.hasChildWithKey('grandchild'), isFalse);
+        expect(child.hasChildWithKey('nonExisting'), isFalse);
+      });
+    });
+
     group('root', () {
       test('returns the root node', () {
         expect(root.root, same(root));
@@ -638,6 +656,27 @@ void main() {
         ]);
 
         expect(me.ls(), ['/', '/child', '/child/grandchild']);
+      });
+    });
+
+    group('allNodes', () {
+      test('returns all nodes in the tree', () {
+        expect(root.allNodes(), [root, grandpa, dad, me, child, grandchild]);
+        expect(me.allNodes(), [me, child, grandchild]);
+      });
+    });
+
+    group('allNodesWhere', () {
+      test('returns all nodes matching the given condition', () {
+        expect(root.allNodesWhere(where: (node) => node.key.startsWith('g')), [
+          grandpa,
+          grandchild,
+        ]);
+
+        expect(me.allNodesWhere(where: (node) => node.key.contains('h')), [
+          child,
+          grandchild,
+        ]);
       });
     });
 

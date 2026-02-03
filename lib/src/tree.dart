@@ -18,7 +18,7 @@ class Tree<T extends TreeData> {
     required T value,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
-  }) => Tree._(
+  }) => Tree.base(
     key: key,
     parent: parent,
     value: value,
@@ -33,13 +33,28 @@ class Tree<T extends TreeData> {
     required T value,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
-  }) => Tree._(
+  }) => Tree.base(
     key: key,
     parent: null,
     value: value,
     children: children,
     originalKey: originalKey,
   );
+
+  // ...........................................................................
+  /// The base constructor used by the factories
+  Tree.base({
+    required this.key,
+    required Tree<T>? parent,
+    required T value,
+    Iterable<Tree<T>> children = const [],
+    required String? originalKey,
+  }) : originalKey = originalKey ?? key,
+       _data = value,
+       _children = [...children] {
+    _init(parent);
+    _makeNodeNamesUnique();
+  }
 
   /// Example instance for test purposes
   static Tree<ExampleData> example({String? key}) =>
@@ -100,6 +115,7 @@ class Tree<T extends TreeData> {
     return current;
   }
 
+  // ...........................................................................
   /// Returns a list of children
   Iterable<Tree<T>> get children => _children;
 
@@ -118,6 +134,9 @@ class Tree<T extends TreeData> {
     }
     return null;
   }
+
+  /// Returns true if a child with the given key exists
+  bool hasChildWithKey(String key) => childByKey(key) != null;
 
   // ...........................................................................
   /// Finds a child node by path segments
@@ -177,6 +196,24 @@ class Tree<T extends TreeData> {
 
     _ls(paths, '');
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
+  }
+
+  // ...........................................................................
+  /// List all nodes
+  Iterable<Tree<T>> allNodes() {
+    final result = <Tree<T>>[];
+
+    _lsAllNodes(result);
+    return result;
+  }
+
+  /// List all nodes where the given condition is met
+  Iterable<Tree<T>> allNodesWhere({bool Function(Tree<T> node)? where}) {
+    final result = <Tree<T>>[];
+
+    _lsAllNodes(result);
+
+    return where != null ? result.where(where) : result;
   }
 
   // ######################
@@ -268,20 +305,6 @@ class Tree<T extends TreeData> {
   bool _isReadOnly = false;
 
   // ...........................................................................
-  Tree._({
-    required this.key,
-    required Tree<T>? parent,
-    required T value,
-    Iterable<Tree<T>> children = const [],
-    required String? originalKey,
-  }) : originalKey = originalKey ?? key,
-       _data = value,
-       _children = [...children] {
-    _init(parent);
-    _makeNodeNamesUnique();
-  }
-
-  // ...........................................................................
   void _init(Tree<T>? parent) {
     throwIfNotValidJsonKey(key);
     _throwOnForbiddenKey();
@@ -321,7 +344,7 @@ class Tree<T extends TreeData> {
       ch.add(_fromJson(childJson));
     }
 
-    return Tree._(
+    return Tree.base(
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,
@@ -390,6 +413,15 @@ class Tree<T extends TreeData> {
 
     for (final child in children) {
       child._ls(paths, '$ownPath/${child.key}');
+    }
+  }
+
+  // ...........................................................................
+  void _lsAllNodes(List<Tree<T>> nodes) {
+    nodes.add(this);
+
+    for (final child in children) {
+      child._lsAllNodes(nodes);
     }
   }
 

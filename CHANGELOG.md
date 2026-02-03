@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add allNodes and allNodesWhere
+
 ### Changed
 
 - kidney: changed references to git
