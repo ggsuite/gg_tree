@@ -10,7 +10,6 @@ dependencies:
   path: ^1.8.0
   json_annotation: ^4.10.0
   gg_json: ^3.0.6
-  gg_direct_json: ^2.0.1
 
 dev_dependencies:
   build_runner: ^2.4.6

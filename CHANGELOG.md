@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Add lsNodes and lsNodesWhere
+- Add childByPathOrNull
+
+### Changed
+
+- kidney: changed references to git
+- Rename value into data
+
 ## [1.0.1] - 2026-02-02
 
 ### Added
@@ -27,5 +39,6 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.1...HEAD
 [1.0.1]: https://github.com/ggsuite/gg_tree/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/ggsuite/gg_tree/tag/%tag

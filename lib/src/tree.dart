@@ -8,38 +8,58 @@ import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/src/tree_data.dart';
 import 'package:gg_tree/src/tree_query.dart';
 
-/// A tree of composition items reflecting the generator hierarchy
+const _isValidJsonKey = isValidJsonKey;
 
+/// A tree of composition items reflecting the generator hierarchy
 class Tree<T extends TreeData> {
   /// Constructor
   factory Tree({
     required String key,
     required Tree<T> parent,
-    required T value,
+    required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
-  }) => Tree._(
+    bool Function(String key) isValidJsonKey = _isValidJsonKey,
+  }) => Tree.base(
     key: key,
     parent: parent,
-    value: value,
+    data: data,
     children: children,
     originalKey: originalKey,
+    isValidJsonKey: isValidJsonKey,
   );
 
   // ...........................................................................
   /// Constructor for a root tree
   factory Tree.root({
     required String key,
-    required T value,
+    required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
-  }) => Tree._(
+  }) => Tree.base(
     key: key,
     parent: null,
-    value: value,
+    data: data,
     children: children,
     originalKey: originalKey,
   );
+
+  // ...........................................................................
+  /// The base constructor used by the factories
+  Tree.base({
+    required String key,
+    required Tree<T>? parent,
+    required T data,
+    Iterable<Tree<T>> children = const [],
+    required String? originalKey,
+    this.isValidJsonKey = _isValidJsonKey,
+  }) : originalKey = originalKey ?? key,
+       _key = key,
+       _data = data,
+       _children = [...children] {
+    _init(parent);
+    _makeKeysUnique();
+  }
 
   /// Example instance for test purposes
   static Tree<ExampleData> example({String? key}) =>
@@ -63,16 +83,54 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// The key of this node
-  String key;
+  String get key => _key;
+
+  /// Sets the key of this node
+  set key(String value) {
+    _throwWhenReadonly();
+    _throwIfNotValidJsonKey(value);
+    _key = value;
+    parent?._makeKeysUnique();
+  }
+
+  /// Function to validate json keys
+  final bool Function(String key) isValidJsonKey;
 
   /// The original unnamed key.
   String originalKey;
 
+  /// Returns true if this node is the root
+  bool get isRoot => parent == null;
+
   /// Returns the value of this node
-  T get value => _data;
+  T get data => _data;
+
+  /// Sets the data
+  set data(T value) {
+    _throwWhenReadonly();
+    _data = value;
+  }
 
   /// Returns the value as JSON
-  Json get valueJson => _data.toJson();
+  Json get dataJson => _data.toJson();
+
+  // ...........................................................................
+  /// Returns the path of this node
+  Iterable<String> get pathSegments => ancestors(
+    includeSelf: true,
+    includeRoot: false,
+    startAtRoot: true,
+  ).map((e) => e.key);
+
+  /// Returns the path of this node as string
+  String get path => '/${pathSegments.join('/')}';
+
+  /// Returns a map of all paths to their corresponding tree nodes
+  Map<String, Tree<T>> pathToTreeMap({bool Function(Tree<T> slot)? where}) {
+    final result = <String, Tree<T>>{};
+    _pathToTreeMap([], result, where: where);
+    return result;
+  }
 
   // ...........................................................................
   /// Set the parent
@@ -85,7 +143,7 @@ class Tree<T extends TreeData> {
       _parent?._children.add(this);
     }
 
-    _parent?._makeNodeNamesUnique();
+    _parent?._makeKeysUnique();
   }
 
   /// Returns the parent node or null if this is the root
@@ -100,13 +158,14 @@ class Tree<T extends TreeData> {
     return current;
   }
 
+  // ...........................................................................
   /// Returns a list of children
   Iterable<Tree<T>> get children => _children;
 
   /// Returns all children to list of children
   void addChildren(Iterable<Tree<T>> children) {
     _children.addAll(children);
-    _makeNodeNamesUnique();
+    _makeKeysUnique();
   }
 
   /// Returns a child by its key or null if not found
@@ -119,7 +178,18 @@ class Tree<T extends TreeData> {
     return null;
   }
 
+  /// Returns true if a child with the given key exists
+  bool hasChildWithKey(String key) => childByKey(key) != null;
+
   // ...........................................................................
+  /// Returns the child node by path or null if not found
+  Tree<T>? childByPathOrNull(String path) =>
+      _childByPath(path, throwWhenNotFound: false);
+
+  /// Returns the child nod by path or throws if not found
+  Tree<T> childByPath(String path) =>
+      _childByPath(path, throwWhenNotFound: true)!;
+
   /// Finds a child node by path segments
   Tree<T>? relative(Iterable<String> path) => _relative(path);
 
@@ -172,16 +242,35 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// Lists all objects paths of this tree
-  List<String> ls({String prefix = ''}) {
+  List<String> ls({String prefix = '', bool Function(Tree<T> node)? where}) {
     final paths = <String>[];
 
-    _ls(paths, '');
+    _ls(paths, '.', where: where);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
+  }
+
+  /// List all nodes
+  Iterable<Tree<T>> lsNodes() {
+    final result = <Tree<T>>[];
+
+    _lsNodes(result);
+    return result;
+  }
+
+  /// List all nodes where the given condition is met
+  Iterable<Tree<T>> lsNodesWhere(bool Function(Tree<T> node)? where) {
+    final result = <Tree<T>>[];
+
+    _lsNodes(result);
+
+    return where != null ? result.where(where) : result;
   }
 
   // ######################
   // Private
   // ######################
+
+  String _key;
 
   static (
     Tree<ExampleData> root,
@@ -194,7 +283,7 @@ class Tree<T extends TreeData> {
   _exampleNodes({String? key}) {
     final root = Tree<ExampleData>.root(
       key: key ?? 'root',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'root',
         'hiRoot': 'Hi from root.',
         'isAncestor': true,
@@ -204,7 +293,7 @@ class Tree<T extends TreeData> {
     final grandpa = Tree<ExampleData>(
       parent: root,
       key: 'grandpa',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'grandpa',
         'hiGrandpa': 'Hi from grandpa.',
         'isAncestor': false,
@@ -214,7 +303,7 @@ class Tree<T extends TreeData> {
     final dad = Tree<ExampleData>(
       parent: grandpa,
       key: 'dad',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'dad',
         'hiDad': 'Hi from dad.',
         'isAncestor': false,
@@ -225,7 +314,7 @@ class Tree<T extends TreeData> {
     final me = Tree<ExampleData>(
       parent: dad,
       key: 'me',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'me',
         'hiMe': 'Hi from me.',
         'isAncestor': false,
@@ -236,7 +325,7 @@ class Tree<T extends TreeData> {
     final child = Tree<ExampleData>(
       parent: me,
       key: 'child',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'child',
         'hiChild': 'Hi from child.',
         'isAncestor': false,
@@ -247,7 +336,7 @@ class Tree<T extends TreeData> {
     final grandchild = Tree<ExampleData>(
       parent: child,
       key: 'grandchild',
-      value: ExampleData({
+      data: ExampleData({
         'me': 'grandchild',
         'hiGrandchild': 'Hi from grandchild.',
         'isAncestor': false,
@@ -268,22 +357,8 @@ class Tree<T extends TreeData> {
   bool _isReadOnly = false;
 
   // ...........................................................................
-  Tree._({
-    required this.key,
-    required Tree<T>? parent,
-    required T value,
-    Iterable<Tree<T>> children = const [],
-    required String? originalKey,
-  }) : originalKey = originalKey ?? key,
-       _data = value,
-       _children = [...children] {
-    _init(parent);
-    _makeNodeNamesUnique();
-  }
-
-  // ...........................................................................
   void _init(Tree<T>? parent) {
-    throwIfNotValidJsonKey(key);
+    _throwIfNotValidJsonKey(key);
     _throwOnForbiddenKey();
     for (final child in [...children]) {
       child.parent = this;
@@ -292,9 +367,16 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
+  /// Override this method in subclasses to enforce custom key rules
   void _throwOnForbiddenKey() {
     if (key.startsWith('_')) {
       throw Exception('Key "$key" must not start with _');
+    }
+  }
+
+  void _throwIfNotValidJsonKey(String key) {
+    if (!isValidJsonKey(key)) {
+      throw Exception('$key is not a valid json identifier');
     }
   }
 
@@ -304,28 +386,34 @@ class Tree<T extends TreeData> {
     json['key'] = tree.key;
     json['originalKey'] = tree.originalKey;
     json['isReadOnly'] = tree.isReadOnly;
-    json['_data'] = tree.value.toJson();
+    json['_data'] = tree.data.toJson();
 
     final childrenJson = <Json>[];
     for (final child in tree.children) {
       childrenJson.add(_toJson(child));
     }
-    json['_children'] = childrenJson;
+
+    if (childrenJson.isNotEmpty) {
+      json['_children'] = childrenJson;
+    }
     return json;
   }
 
   // ...........................................................................
   Tree<T> _fromJson(Json json) {
     final ch = <Tree<T>>[];
-    for (final childJson in (json['_children'] as List).cast<Json>()) {
-      ch.add(_fromJson(childJson));
+
+    if (json['_children'] != null) {
+      for (final childJson in (json['_children'] as List).cast<Json>()) {
+        ch.add(_fromJson(childJson));
+      }
     }
 
-    return Tree._(
+    return Tree.base(
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,
-      value: _data.fromJson(json['_data'] as Json) as T,
+      data: _data.fromJson(json['_data'] as Json) as T,
       children: ch,
     );
   }
@@ -349,7 +437,7 @@ class Tree<T extends TreeData> {
 
     // Iterate all nodes and apply the query
     for (final node in nodes) {
-      final value = node.valueJson.getOrNull<V>(q.data);
+      final value = node.dataJson.getOrNull<V>(q.data);
       if (value != null) {
         return value;
       }
@@ -368,7 +456,7 @@ class Tree<T extends TreeData> {
   void _set<V>(String query, V value, {bool extend = false}) {
     final q = TreeQuery(query);
     final node = findNode(q.node);
-    final newJson = node.valueJson.set<V>(q.data, value, extend: extend);
+    final newJson = node.dataJson.set<V>(q.data, value, extend: extend);
     node._data = node._data.fromJson(newJson) as T;
   }
 
@@ -384,17 +472,31 @@ class Tree<T extends TreeData> {
   Tree<T> _deepCopy(Tree<T> tree) => fromJson(toJson());
 
   // ...........................................................................
-  void _ls(List<String> paths, String ownPath) {
-    final path = ownPath.isEmpty ? '/' : ownPath;
-    paths.add(path);
+  void _ls(
+    List<String> paths,
+    String ownPath, {
+    bool Function(Tree<T> node)? where,
+  }) {
+    if (where == null || where(this)) {
+      paths.add(ownPath);
+    }
 
     for (final child in children) {
-      child._ls(paths, '$ownPath/${child.key}');
+      child._ls(paths, '$ownPath/${child.key}', where: where);
     }
   }
 
   // ...........................................................................
-  void _makeNodeNamesUnique() {
+  void _lsNodes(List<Tree<T>> nodes) {
+    nodes.add(this);
+
+    for (final child in children) {
+      child._lsNodes(nodes);
+    }
+  }
+
+  // ...........................................................................
+  void _makeKeysUnique() {
     if (_children.length <= 1) {
       return;
     }
@@ -437,7 +539,7 @@ class Tree<T extends TreeData> {
         counts[nodKey] = count + 1;
         nodKey = '$nodKey$count';
       }
-      node.key = nodKey;
+      node._key = nodKey;
     }
   }
 
@@ -484,14 +586,15 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   Tree<T>? _absolute(Iterable<String> path) => root.relative(path);
 
+  Tree<T>? _childByPath(String path, {bool throwWhenNotFound = false}) {
+    final segments = path.split('/').where((e) => e.isNotEmpty);
+    return _relative(segments, throwWhenNotFound: throwWhenNotFound);
+  }
+
   // ...........................................................................
   Tree<T>? _findNode(String path, {bool throwWhenNotFound = false}) {
     if (path.isEmpty) {
-      if (throwWhenNotFound) {
-        throw Exception('Path is empty');
-      }
-
-      return null;
+      path = '.';
     }
 
     final segments = path.split('/').where((e) => e.isNotEmpty);
@@ -623,7 +726,7 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - /$prefix$e');
+    final possiblePaths = node.ls().map((e) => '  - /$prefix${e.substring(1)}');
 
     throw Exception(
       [
@@ -642,7 +745,7 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - $prefix$e');
+    final possiblePaths = node.ls().map((e) => '  - $prefix${e.substring(1)}');
 
     throw Exception(
       [
@@ -652,5 +755,20 @@ class Tree<T extends TreeData> {
         ...possiblePaths,
       ].join('\n'),
     );
+  }
+
+  // ...........................................................................
+  void _pathToTreeMap(
+    List<String> path,
+    Map<String, Tree<T>> result, {
+    bool Function(Tree<T> slot)? where,
+  }) {
+    final skip = where == null ? false : !where(this);
+    if (!skip) {
+      result['/${path.join('/')}'] = this;
+    }
+    for (final child in children) {
+      child._pathToTreeMap([...path, child.key], result, where: where);
+    }
   }
 }
