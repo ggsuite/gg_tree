@@ -1,6 +1,6 @@
 name: gg_tree
 description: gg_tree organizes data in a tree and allows to search or reference other tree items
-version: 1.0.2
+version: 1.0.3
 repository: https://github.com/ggsuite/gg_tree.git
 
 environment:
