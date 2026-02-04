@@ -482,8 +482,7 @@ class Tree<T extends TreeData> {
         startAtRoot: false,
       );
     } else {
-      final node = _findNode(q.node);
-      nodes = node == null ? [] : [node];
+      nodes = [this];
     }
 
     // Read node data
@@ -492,9 +491,14 @@ class Tree<T extends TreeData> {
 
     // Iterate all nodes and apply the query
     for (final node in nodes) {
+      final dataNode = node.childByPath(q.node);
+
       final value = readTreeInfo
-          ? node._treeInfo<V>(dataKey)
-          : node.dataJson.getOrNull<V>(q.data);
+          ? dataNode._treeInfo<V>(dataKey)
+          : dataNode.dataJson.getOrNull<V>(
+              q.data,
+              throwWhenNotFound: throwWhenNotFound,
+            );
       if (value != null) {
         return value;
       }
@@ -796,14 +800,25 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
+  String _createRelativePath(String path, String prefix) {
+    final result = '$prefix${path.substring(1)}';
+    return result.isEmpty
+        ? '.'
+        : result.startsWith('/')
+        ? '.$result'
+        : result;
+  }
+
+  // ...........................................................................
   void _throwRelativePathNotFound(
     Iterable<String> path,
     Tree<dynamic> node,
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - $prefix${e.substring(1)}');
-
+    final possiblePaths = node.ls().map(
+      (e) => '  - ${_createRelativePath(e, prefix)}',
+    );
     throw Exception(
       [
         'Could not find node "${path.join('/')}"',

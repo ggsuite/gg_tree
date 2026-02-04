@@ -2,6 +2,7 @@ name: gg_tree
 description: gg_tree organizes data in a tree and allows to search or reference other tree items
 version: 1.0.5
 repository: https://github.com/ggsuite/gg_tree.git
+publish_to: none
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -9,7 +10,8 @@ environment:
 dependencies:
   path: ^1.8.0
   json_annotation: ^4.10.0
-  gg_json: ^3.0.6
+
+  gg_json: ^3.0.7
 
 dev_dependencies:
   build_runner: ^2.4.6

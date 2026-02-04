@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.5] - 2026-02-04
+
+### Changed
+
+- Improve error messages. Print error messages when json data path is not found
+
 ## [1.0.4] - 2026-02-04
 
 ### Changed
@@ -51,6 +57,7 @@
 
 - Initial implementation
 
+[1.0.5]: https://github.com/ggsuite/gg_tree/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/ggsuite/gg_tree/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/ggsuite/gg_tree/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/ggsuite/gg_tree/compare/1.0.1...1.0.2

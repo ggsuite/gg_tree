@@ -354,9 +354,9 @@ void main() {
           'Could not find node "unknown"',
           '',
           'Possible paths:',
-          '  - ',
-          '  - /child',
-          '  - /child/grandchild',
+          '  - .',
+          '  - ./child',
+          '  - ./child/grandchild',
         ]);
       });
     });
@@ -516,7 +516,62 @@ void main() {
       });
     });
 
+    group('get', () {
+      group('throws', () {
+        test('when node is not found', () {
+          var message = <String>[];
+          try {
+            me.get<String>('wrong/node#field');
+          } catch (e) {
+            message = (e as dynamic).message.toString().trim().split('\n');
+          }
+
+          expect(message, [
+            'Could not find node "wrong/node"',
+            '',
+            'Possible paths:',
+            '  - .',
+            '  - ./child',
+            '  - ./child/grandchild',
+          ]);
+        });
+
+        test('when the field is not found', () {
+          var message = <String>[];
+          try {
+            me.get<String>('../#wrongField');
+          } catch (e) {
+            message = (e as dynamic).message.toString().trim().split('\n');
+          }
+
+          expect(message, [
+            'Value at path "wrongField/" not found.',
+            '',
+            'Available paths:',
+            '  - .',
+            '  - ./me',
+            '  - ./hiDad',
+            '  - ./isAncestor',
+            '  - ./nums',
+            '  - ./nums/string',
+            '  - ./nums/int',
+            '  - ./nums/double',
+            '  - ./nums/true',
+            '  - ./nums/false',
+            '  - ./nums/null',
+          ]);
+        });
+      });
+    });
+
     group('getOrNull, get', () {
+      group('returns null', () {
+        test('when the node is not found', () {
+          expect(me.getOrNull<String>('..#wrong'), isNull);
+          expect(me.getOrNull<String>('..#me'), 'dad');
+        });
+        test('when the json path is not found', () {});
+      });
       group('returns data from', () {
         group('nodes directly', () {
           test('using ./', () {
