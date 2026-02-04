@@ -70,6 +70,8 @@ class Tree<T extends TreeData> {
     Tree<ExampleData> grandpa,
     Tree<ExampleData> dad,
     Tree<ExampleData> me,
+    Tree<ExampleData> brother,
+    Tree<ExampleData> sister,
     Tree<ExampleData> child,
     Tree<ExampleData> grandchild,
   )
@@ -125,7 +127,7 @@ class Tree<T extends TreeData> {
   String get path => '/${pathSegments.join('/')}';
 
   /// Returns a simple path with only /, numbers and letters
-  String get pathWithLettersOnly => keepOnlyLetters(path);
+  String get pathSimple => keepOnlyLetters(path);
 
   /// Returns a map of all paths to their corresponding tree nodes
   Map<String, Tree<T>> pathToTreeMap({bool Function(Tree<T> slot)? where}) {
@@ -279,6 +281,8 @@ class Tree<T extends TreeData> {
     Tree<ExampleData> grandpa,
     Tree<ExampleData> dad,
     Tree<ExampleData> me,
+    Tree<ExampleData> brother,
+    Tree<ExampleData> sister,
     Tree<ExampleData> child,
     Tree<ExampleData> grandchild,
   )
@@ -324,6 +328,28 @@ class Tree<T extends TreeData> {
       }),
     );
 
+    final brother = Tree<ExampleData>(
+      parent: dad,
+      key: 'brother',
+      data: ExampleData({
+        'me': 'brother',
+        'hiBrother': 'Hi from brother.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
+    final sister = Tree<ExampleData>(
+      parent: dad,
+      key: 'sister',
+      data: ExampleData({
+        'me': 'sister',
+        'hiBrother': 'Hi from sister.',
+        'isAncestor': false,
+        'nums': exampleJsonPrimitive,
+      }),
+    );
+
     final child = Tree<ExampleData>(
       parent: me,
       key: 'child',
@@ -346,7 +372,7 @@ class Tree<T extends TreeData> {
       }),
     );
 
-    return (root, grandpa, dad, me, child, grandchild);
+    return (root, grandpa, dad, me, brother, sister, child, grandchild);
   }
 
   // ...........................................................................
@@ -383,11 +409,34 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  Json _toJson(Tree tree) {
+  Json _toJson(Tree tree, {bool onlyOwn = false, bool addComputed = false}) {
     final json = Json();
     json['key'] = tree.key;
     json['originalKey'] = tree.originalKey;
     json['isReadOnly'] = tree.isReadOnly;
+
+    if (addComputed) {
+      json['childCount'] = tree.children.length;
+
+      final siblingsCount = tree.parent?.children.length ?? 1;
+      json['siblingsCount'] = siblingsCount;
+
+      final index = tree._parent?.children.toList().indexOf(this) ?? 0;
+      json['index'] = index;
+
+      final reverseIndex = siblingsCount - index - 1;
+      json['reverseIndex'] = reverseIndex;
+
+      json['path'] = path;
+      json['pathSimple'] = pathSimple;
+
+      json['isRoot'] = isRoot;
+    }
+
+    if (onlyOwn) {
+      return json;
+    }
+
     json['_data'] = tree.data.toJson();
 
     final childrenJson = <Json>[];
@@ -437,9 +486,15 @@ class Tree<T extends TreeData> {
       nodes = node == null ? [] : [node];
     }
 
+    // Read node data
+    final readTreeInfo = q.data.startsWith('node.');
+    final dataKey = readTreeInfo ? q.data.substring(5) : q.data;
+
     // Iterate all nodes and apply the query
     for (final node in nodes) {
-      final value = node.dataJson.getOrNull<V>(q.data);
+      final value = readTreeInfo
+          ? node._treeInfo<V>(dataKey)
+          : node.dataJson.getOrNull<V>(q.data);
       if (value != null) {
         return value;
       }
@@ -772,5 +827,11 @@ class Tree<T extends TreeData> {
     for (final child in children) {
       child._pathToTreeMap([...path, child.key], result, where: where);
     }
+  }
+
+  // ...........................................................................
+  V? _treeInfo<V>(String dataKey) {
+    final dataJson = _toJson(this, onlyOwn: true, addComputed: true);
+    return dataJson.getOrNull<V>(dataKey);
   }
 }

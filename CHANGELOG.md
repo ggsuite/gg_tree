@@ -1,10 +1,16 @@
 # Changelog
 
+## [1.0.4] - 2026-02-04
+
+### Changed
+
+- Read node metadata via tree.get('node.\*')
+
 ## [1.0.3] - 2026-02-04
 
 ### Added
 
-- Add pathWithLettersOnly
+- Add pathSimple
 
 ## [1.0.2] - 2026-02-04
 
@@ -45,6 +51,7 @@
 
 - Initial implementation
 
+[1.0.4]: https://github.com/ggsuite/gg_tree/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/ggsuite/gg_tree/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/ggsuite/gg_tree/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/ggsuite/gg_tree/compare/1.0.0...1.0.1

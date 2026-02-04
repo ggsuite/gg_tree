@@ -93,6 +93,42 @@
                   ]
                 }
               ]
+            },
+            {
+              "key": "brother",
+              "originalKey": "brother",
+              "isReadOnly": false,
+              "_data": {
+                "me": "brother",
+                "hiBrother": "Hi from brother.",
+                "isAncestor": false,
+                "nums": {
+                  "string": "Hello, World",
+                  "int": 42,
+                  "double": 3.14159,
+                  "true": true,
+                  "false": false,
+                  "null": null
+                }
+              }
+            },
+            {
+              "key": "sister",
+              "originalKey": "sister",
+              "isReadOnly": false,
+              "_data": {
+                "me": "sister",
+                "hiBrother": "Hi from sister.",
+                "isAncestor": false,
+                "nums": {
+                  "string": "Hello, World",
+                  "int": 42,
+                  "double": 3.14159,
+                  "true": true,
+                  "false": false,
+                  "null": null
+                }
+              }
             }
           ]
         }
