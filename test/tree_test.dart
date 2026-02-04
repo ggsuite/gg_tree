@@ -184,6 +184,29 @@ void main() {
       });
     });
 
+    group('pathSimple', () {
+      test('returns a simple path with only /, numbers and letters', () {
+        final parent = Tree<ExampleData>.root(
+          key: 'parent123',
+          data: ExampleData.example(),
+        );
+
+        final child = Tree<ExampleData>(
+          key: 'child_456',
+          parent: parent,
+          data: ExampleData.example(),
+        );
+
+        final grandChild = Tree<ExampleData>(
+          key: 'grand_child789',
+          parent: child,
+          data: ExampleData.example(),
+        );
+
+        expect(grandChild.pathWithLettersOnly, '/child/grandchild');
+      });
+    });
+
     group('pathToTreeMap', () {
       test('returns a map of all paths to their corresponding tree nodes', () {
         final map = root.pathToTreeMap();

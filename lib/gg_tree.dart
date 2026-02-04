@@ -6,6 +6,7 @@
 
 library;
 
+export 'src/tools.dart';
 export 'src/tree.dart';
 export 'src/tree_data.dart';
 export 'src/tree_query.dart';

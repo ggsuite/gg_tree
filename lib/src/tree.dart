@@ -5,8 +5,7 @@
 // found in the LICENSE file in the root of this package.
 
 import 'package:gg_json/gg_json.dart';
-import 'package:gg_tree/src/tree_data.dart';
-import 'package:gg_tree/src/tree_query.dart';
+import 'package:gg_tree/gg_tree.dart';
 
 const _isValidJsonKey = isValidJsonKey;
 
@@ -124,6 +123,9 @@ class Tree<T extends TreeData> {
 
   /// Returns the path of this node as string
   String get path => '/${pathSegments.join('/')}';
+
+  /// Returns a simple path with only /, numbers and letters
+  String get pathWithLettersOnly => keepOnlyLetters(path);
 
   /// Returns a map of all paths to their corresponding tree nodes
   Map<String, Tree<T>> pathToTreeMap({bool Function(Tree<T> slot)? where}) {
