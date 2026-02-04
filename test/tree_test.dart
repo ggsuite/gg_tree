@@ -669,64 +669,64 @@ void main() {
 
         group('the node itself', () {
           group('using node', () {
-            test('node.key', () {
-              expect(me.getOrNull<String>('./#node.key'), 'me');
+            test('node/key', () {
+              expect(me.getOrNull<String>('./#node/key'), 'me');
             });
-            test('node.childCount', () {
-              expect(me.getOrNull<int>('./#node.childCount'), 1);
-              expect(dad.getOrNull<int>('./#node.childCount'), 3);
+            test('node/childCount', () {
+              expect(me.getOrNull<int>('./#node/childCount'), 1);
+              expect(dad.getOrNull<int>('./#node/childCount'), 3);
             });
-            test('node.index', () {
-              expect(me.getOrNull<int>('./#node.index'), 0);
-              expect(brother.getOrNull<int>('./#node.index'), 1);
-              expect(sister.getOrNull<int>('./#node.index'), 2);
-              expect(root.getOrNull<int>('./#node.index'), 0);
+            test('node/index', () {
+              expect(me.getOrNull<int>('./#node/index'), 0);
+              expect(brother.getOrNull<int>('./#node/index'), 1);
+              expect(sister.getOrNull<int>('./#node/index'), 2);
+              expect(root.getOrNull<int>('./#node/index'), 0);
             });
-            test('node.siblingsCount', () {
-              expect(me.getOrNull<int>('./#node.siblingsCount'), 3);
-              expect(brother.getOrNull<int>('./#node.siblingsCount'), 3);
-              expect(sister.getOrNull<int>('./#node.siblingsCount'), 3);
-              expect(root.getOrNull<int>('./#node.siblingsCount'), 1);
+            test('node/siblingsCount', () {
+              expect(me.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(brother.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(sister.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(root.getOrNull<int>('./#node/siblingsCount'), 1);
             });
-            test('node.reverseIndex', () {
-              expect(me.getOrNull<int>('./#node.reverseIndex'), 2);
-              expect(brother.getOrNull<int>('./#node.reverseIndex'), 1);
-              expect(sister.getOrNull<int>('./#node.reverseIndex'), 0);
-              expect(root.getOrNull<int>('./#node.reverseIndex'), 0);
+            test('node/reverseIndex', () {
+              expect(me.getOrNull<int>('./#node/reverseIndex'), 2);
+              expect(brother.getOrNull<int>('./#node/reverseIndex'), 1);
+              expect(sister.getOrNull<int>('./#node/reverseIndex'), 0);
+              expect(root.getOrNull<int>('./#node/reverseIndex'), 0);
             });
-            test('node.path', () {
-              expect(me.getOrNull<String>('./#node.path'), '/grandpa/dad/me');
+            test('node/path', () {
+              expect(me.getOrNull<String>('./#node/path'), '/grandpa/dad/me');
               expect(
-                brother.getOrNull<String>('./#node.path'),
+                brother.getOrNull<String>('./#node/path'),
                 '/grandpa/dad/brother',
               );
               expect(
-                sister.getOrNull<String>('./#node.path'),
+                sister.getOrNull<String>('./#node/path'),
                 '/grandpa/dad/sister',
               );
-              expect(root.getOrNull<String>('./#node.path'), '/');
+              expect(root.getOrNull<String>('./#node/path'), '/');
             });
-            test('node.pathSimple', () {
+            test('node/pathSimple', () {
               me.key = 'me89';
               brother.key = 'brother_90';
 
               expect(
-                me.getOrNull<String>('./#node.pathSimple'),
+                me.getOrNull<String>('./#node/pathSimple'),
                 '/grandpa/dad/me',
               );
               expect(
-                brother.getOrNull<String>('./#node.pathSimple'),
+                brother.getOrNull<String>('./#node/pathSimple'),
                 '/grandpa/dad/brother',
               );
               expect(
-                sister.getOrNull<String>('./#node.pathSimple'),
+                sister.getOrNull<String>('./#node/pathSimple'),
                 '/grandpa/dad/sister',
               );
-              expect(root.getOrNull<String>('./#node.pathSimple'), '/');
+              expect(root.getOrNull<String>('./#node/pathSimple'), '/');
             });
-            test('node.isRoot', () {
-              expect(root.getOrNull<bool>('./#node.isRoot'), isTrue);
-              expect(sister.getOrNull<bool>('./#node.isRoot'), isFalse);
+            test('node/isRoot', () {
+              expect(root.getOrNull<bool>('./#node/isRoot'), isTrue);
+              expect(sister.getOrNull<bool>('./#node/isRoot'), isFalse);
             });
           });
         });

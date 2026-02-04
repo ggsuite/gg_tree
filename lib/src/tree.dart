@@ -486,7 +486,7 @@ class Tree<T extends TreeData> {
     }
 
     // Read node data
-    final readTreeInfo = q.data.startsWith('node.');
+    final readTreeInfo = q.data.startsWith('node/');
     final dataKey = readTreeInfo ? q.data.substring(5) : q.data;
 
     // Iterate all nodes and apply the query

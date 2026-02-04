@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.6] - 2026-02-04
+
+### Fixed
+
+- Fix an issue with requesting node infos
 
 ### Removed
 
@@ -16,7 +20,7 @@
 
 ### Changed
 
-- Read node metadata via tree.get('node.\*')
+- Read node metadata via tree.get('node/\*')
 
 ## [1.0.3] - 2026-02-04
 
@@ -63,7 +67,7 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.5...HEAD
+[1.0.6]: https://github.com/ggsuite/gg_tree/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/ggsuite/gg_tree/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/ggsuite/gg_tree/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/ggsuite/gg_tree/compare/1.0.2...1.0.3
