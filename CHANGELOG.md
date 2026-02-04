@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.2] - 2026-02-04
 
 ### Added
 
@@ -39,6 +39,6 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.1...HEAD
+[1.0.2]: https://github.com/ggsuite/gg_tree/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/ggsuite/gg_tree/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/ggsuite/gg_tree/tag/%tag
