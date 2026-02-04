@@ -11,7 +11,9 @@ dependencies:
   path: ^1.8.0
   json_annotation: ^4.10.0
   gg_json:
-    path: ../gg_json # ^3.0.6
+    git:
+      url: git@github.com:ggsuite/gg_json.git
+      ref: CDM-1170
   gg_direct_json: ^2.0.1
 
 dev_dependencies:
