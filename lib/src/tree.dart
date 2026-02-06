@@ -249,10 +249,14 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// Lists all objects paths of this tree
-  List<String> ls({String prefix = '', bool Function(Tree<T> node)? where}) {
+  List<String> ls({
+    String prefix = '',
+    bool Function(Tree<T> node)? where,
+    bool showDataPaths = true,
+  }) {
     final paths = <String>[];
 
-    _ls(paths, '.', where: where);
+    _ls(paths, '.', where: where, showDataPaths: showDataPaths);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
   }
 
@@ -412,29 +416,46 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  Json _toJson(Tree tree, {bool onlyOwn = false, bool addComputed = false}) {
-    final json = Json();
-    json['key'] = tree.key;
-    json['originalKey'] = tree.originalKey;
-    json['isReadOnly'] = tree.isReadOnly;
+  Json _ownJson(Tree tree, bool addComputed) {
+    final json = <String, dynamic>{};
+
+    final siblingsCount = tree.parent?.children.length ?? 1;
+    final index = tree._parent?.children.toList().indexOf(this) ?? 0;
+    final reverseIndex = siblingsCount - index - 1;
+
+    json['childCount'] = tree.children.length;
+    json['siblingsCount'] = siblingsCount;
+    json['index'] = index;
+    json['reverseIndex'] = reverseIndex;
+    json['path'] = path;
+    json['pathSimple'] = pathSimple;
+    json['isRoot'] = isRoot;
+
+    final result = {
+      'key': tree.key,
+      'originalKey': tree.originalKey,
+      'isReadOnly': tree.isReadOnly,
+    };
 
     if (addComputed) {
-      json['childCount'] = tree.children.length;
-
-      final siblingsCount = tree.parent?.children.length ?? 1;
-      json['siblingsCount'] = siblingsCount;
-
-      final index = tree._parent?.children.toList().indexOf(this) ?? 0;
-      json['index'] = index;
-
-      final reverseIndex = siblingsCount - index - 1;
-      json['reverseIndex'] = reverseIndex;
-
-      json['path'] = path;
-      json['pathSimple'] = pathSimple;
-
-      json['isRoot'] = isRoot;
+      result.addAll({
+        'childCount': tree.children.length,
+        'siblingsCount': siblingsCount,
+        'index': index,
+        'reverseIndex': reverseIndex,
+        'path': path,
+        'pathSimple': pathSimple,
+        'isRoot': isRoot,
+      });
     }
+
+    return result;
+  }
+
+  // ...........................................................................
+  Json _toJson(Tree tree, {bool onlyOwn = false, bool addComputed = false}) {
+    final json = Json();
+    json.addAll(_ownJson(tree, addComputed));
 
     if (onlyOwn) {
       return json;
@@ -540,14 +561,46 @@ class Tree<T extends TreeData> {
     List<String> paths,
     String ownPath, {
     bool Function(Tree<T> node)? where,
+    bool showDataPaths = true,
   }) {
     if (where == null || where(this)) {
       paths.add(ownPath);
-      paths.add('$ownPath/$nodeInfoKey');
+
+      // Write own paths
+      _addDataPaths(showDataPaths, paths, ownPath, showNodePaths: false);
+
+      // Write data paths
+      _addDataPaths(showDataPaths, paths, ownPath, showNodePaths: true);
     }
 
     for (final child in children) {
-      child._ls(paths, '$ownPath/${child.key}', where: where);
+      child._ls(
+        paths,
+        '$ownPath/${child.key}',
+        where: where,
+        showDataPaths: showDataPaths,
+      );
+    }
+  }
+
+  void _addDataPaths(
+    bool showDataPaths,
+    List<String> paths,
+    String ownPath, {
+    required bool showNodePaths,
+  }) {
+    if (showDataPaths) {
+      final dataPaths = showNodePaths
+          ? _ownJson(this, true).ls()
+          : dataJson.ls();
+      for (final dataPath in dataPaths) {
+        if (dataPath == '.') {
+          continue;
+        }
+
+        final node = showNodePaths ? 'node/' : '';
+        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
+      }
     }
   }
 
@@ -791,7 +844,9 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map((e) => '  - /$prefix${e.substring(1)}');
+    final possiblePaths = node
+        .ls(showDataPaths: false)
+        .map((e) => '  - /$prefix${e.substring(1)}');
 
     throw Exception(
       [
@@ -820,9 +875,9 @@ class Tree<T extends TreeData> {
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
-    final possiblePaths = node.ls().map(
-      (e) => '  - ${_createRelativePath(e, prefix)}',
-    );
+    final possiblePaths = node
+        .ls(showDataPaths: false)
+        .map((e) => '  - ${_createRelativePath(e, prefix)}');
     throw Exception(
       [
         'Could not find node "${path.join('/')}"',

@@ -6,6 +6,10 @@
 
 - Add node to output of ls
 
+### Changed
+
+- Tree.ls() shows also data field paths
+
 ## [1.0.6] - 2026-02-04
 
 ### Fixed
