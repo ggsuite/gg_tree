@@ -10,6 +10,10 @@
 
 - Tree.ls() shows also data field paths
 
+### Fixed
+
+- Fix issues with Tree.get
+
 ## [1.0.6] - 2026-02-04
 
 ### Fixed

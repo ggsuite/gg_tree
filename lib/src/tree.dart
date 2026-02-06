@@ -515,17 +515,24 @@ class Tree<T extends TreeData> {
 
     // Iterate all nodes and apply the query
     for (final node in nodes) {
-      final dataNode = node.childByPath(q.node);
+      final dataNode = node.childByPathOrNull(q.node);
+      if (dataNode == null) {
+        continue;
+      }
 
       final value = readTreeInfo
           ? dataNode._treeInfo<V>(dataKey)
           : dataNode.dataJson.getOrNull<V>(
               q.data,
-              throwWhenNotFound: throwWhenNotFound,
+              throwWhenNotFound: q.searchToRoot ? false : throwWhenNotFound,
             );
       if (value != null) {
         return value;
       }
+    }
+
+    if (throwWhenNotFound) {
+      _throwRelativePathNotFound(q.nodeSegments, this, []);
     }
 
     return null;
@@ -533,8 +540,10 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   V _get<V>(String query) {
-    final result = _getOrNull<V>(query, throwWhenNotFound: true) as V;
-    return result;
+    final result = _getOrNull<V>(query, throwWhenNotFound: true);
+    if (result == null) {}
+
+    return result!;
   }
 
   // ...........................................................................

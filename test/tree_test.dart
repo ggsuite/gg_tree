@@ -599,7 +599,6 @@ void main() {
 
           group('self or any ancestors', () {
             test('using no operator', () {
-              /*
               expect(me.get<String>('#hiRoot'), 'Hi from root.');
               expect(me.get<String>('#hiGrandpa'), 'Hi from grandpa.');
               expect(me.get<String>('#hiDad'), 'Hi from dad.');
@@ -609,7 +608,6 @@ void main() {
               expect(me.get<double>('#nums/double'), 3.14159);
               expect(me.get<bool>('#nums/true'), isTrue);
               expect(me.get<bool>('#nums/false'), isFalse);
-              */
             });
           });
         });
@@ -625,84 +623,74 @@ void main() {
               expect(me.get<bool>('./child#nums/false'), isFalse);
             });
 
-            /* test('using ./child/grandchild', () {
+            test('using ./child/grandchild', () {
               expect(
                 me.get<String>('./child/grandchild#hiGrandchild'),
                 'Hi from grandchild.',
               );
 
-              expect(me.get<String>('./child/grandchild#hiChild'), isNull);
-
-              expect(me.get<String>('./child/grandchild#hiGrandpa'), isNull);
-
               expect(me.get<int>('./child/grandchild#nums/int'), 42);
               expect(me.get<double>('./child/grandchild#nums/double'), 3.14159);
               expect(me.get<bool>('./child/grandchild#nums/true'), isTrue);
               expect(me.get<bool>('./child/grandchild#nums/false'), isFalse);
-            });*/
+            });
           });
         });
 
         group('the node itself', () {
           group('using node', () {
             test('node/key', () {
-              expect(me.getOrNull<String>('./#node/key'), 'me');
+              expect(me.get<String>('./#node/key'), 'me');
             });
             test('node/childCount', () {
-              expect(me.getOrNull<int>('./#node/childCount'), 1);
-              expect(dad.getOrNull<int>('./#node/childCount'), 3);
+              expect(me.get<int>('./#node/childCount'), 1);
+              expect(dad.get<int>('./#node/childCount'), 3);
             });
             test('node/index', () {
-              expect(me.getOrNull<int>('./#node/index'), 0);
-              expect(brother.getOrNull<int>('./#node/index'), 1);
-              expect(sister.getOrNull<int>('./#node/index'), 2);
-              expect(root.getOrNull<int>('./#node/index'), 0);
+              expect(me.get<int>('./#node/index'), 0);
+              expect(brother.get<int>('./#node/index'), 1);
+              expect(sister.get<int>('./#node/index'), 2);
+              expect(root.get<int>('./#node/index'), 0);
             });
             test('node/siblingsCount', () {
-              expect(me.getOrNull<int>('./#node/siblingsCount'), 3);
-              expect(brother.getOrNull<int>('./#node/siblingsCount'), 3);
-              expect(sister.getOrNull<int>('./#node/siblingsCount'), 3);
-              expect(root.getOrNull<int>('./#node/siblingsCount'), 1);
+              expect(me.get<int>('./#node/siblingsCount'), 3);
+              expect(brother.get<int>('./#node/siblingsCount'), 3);
+              expect(sister.get<int>('./#node/siblingsCount'), 3);
+              expect(root.get<int>('./#node/siblingsCount'), 1);
             });
             test('node/reverseIndex', () {
-              expect(me.getOrNull<int>('./#node/reverseIndex'), 2);
-              expect(brother.getOrNull<int>('./#node/reverseIndex'), 1);
-              expect(sister.getOrNull<int>('./#node/reverseIndex'), 0);
-              expect(root.getOrNull<int>('./#node/reverseIndex'), 0);
+              expect(me.get<int>('./#node/reverseIndex'), 2);
+              expect(brother.get<int>('./#node/reverseIndex'), 1);
+              expect(sister.get<int>('./#node/reverseIndex'), 0);
+              expect(root.get<int>('./#node/reverseIndex'), 0);
             });
             test('node/path', () {
-              expect(me.getOrNull<String>('./#node/path'), '/grandpa/dad/me');
+              expect(me.get<String>('./#node/path'), '/grandpa/dad/me');
               expect(
-                brother.getOrNull<String>('./#node/path'),
+                brother.get<String>('./#node/path'),
                 '/grandpa/dad/brother',
               );
-              expect(
-                sister.getOrNull<String>('./#node/path'),
-                '/grandpa/dad/sister',
-              );
-              expect(root.getOrNull<String>('./#node/path'), '/');
+              expect(sister.get<String>('./#node/path'), '/grandpa/dad/sister');
+              expect(root.get<String>('./#node/path'), '/');
             });
             test('node/pathSimple', () {
               me.key = 'me89';
               brother.key = 'brother_90';
 
+              expect(me.get<String>('./#node/pathSimple'), '/grandpa/dad/me');
               expect(
-                me.getOrNull<String>('./#node/pathSimple'),
-                '/grandpa/dad/me',
-              );
-              expect(
-                brother.getOrNull<String>('./#node/pathSimple'),
+                brother.get<String>('./#node/pathSimple'),
                 '/grandpa/dad/brother',
               );
               expect(
-                sister.getOrNull<String>('./#node/pathSimple'),
+                sister.get<String>('./#node/pathSimple'),
                 '/grandpa/dad/sister',
               );
-              expect(root.getOrNull<String>('./#node/pathSimple'), '/');
+              expect(root.get<String>('./#node/pathSimple'), '/');
             });
             test('node/isRoot', () {
-              expect(root.getOrNull<bool>('./#node/isRoot'), isTrue);
-              expect(sister.getOrNull<bool>('./#node/isRoot'), isFalse);
+              expect(root.get<bool>('./#node/isRoot'), isTrue);
+              expect(sister.get<bool>('./#node/isRoot'), isFalse);
             });
           });
         });
