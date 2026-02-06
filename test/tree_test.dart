@@ -355,8 +355,11 @@ void main() {
           '',
           'Possible paths:',
           '  - .',
+          '  - ./node',
           '  - ./child',
+          '  - ./child/node',
           '  - ./child/grandchild',
+          '  - ./child/grandchild/node',
         ]);
       });
     });
@@ -388,8 +391,11 @@ void main() {
               '',
               'Possible paths:',
               '  - /grandpa/dad/me',
+              '  - /grandpa/dad/me/node',
               '  - /grandpa/dad/me/child',
+              '  - /grandpa/dad/me/child/node',
               '  - /grandpa/dad/me/child/grandchild',
+              '  - /grandpa/dad/me/child/grandchild/node',
             ]);
           });
 
@@ -406,8 +412,11 @@ void main() {
               '',
               'Possible paths:',
               '  - /grandpa/dad',
+              '  - /grandpa/dad/node',
               '  - /grandpa/dad/child',
+              '  - /grandpa/dad/child/node',
               '  - /grandpa/dad/child/grandchild',
+              '  - /grandpa/dad/child/grandchild/node',
             ]);
           });
         });
@@ -434,8 +443,11 @@ void main() {
             '',
             'Possible paths:',
             '  - ../me',
+            '  - ../me/node',
             '  - ../me/child',
+            '  - ../me/child/node',
             '  - ../me/child/grandchild',
+            '  - ../me/child/grandchild/node',
           ]);
         });
       });
@@ -531,8 +543,11 @@ void main() {
             '',
             'Possible paths:',
             '  - .',
+            '  - ./node',
             '  - ./child',
+            '  - ./child/node',
             '  - ./child/grandchild',
+            '  - ./child/grandchild/node',
           ]);
         });
 
@@ -560,6 +575,139 @@ void main() {
             '  - ./nums/false',
             '  - ./nums/null',
           ]);
+        });
+      });
+
+      group('returns data from', () {
+        group('nodes directly', () {
+          test('using ./', () {
+            expect(me.get<String>('./#hiMe'), 'Hi from me.');
+
+            expect(me.get<int>('./#nums/int'), 42);
+            expect(me.get<double>('./#nums/double'), 3.14159);
+            expect(me.get<bool>('./#nums/true'), isTrue);
+            expect(me.get<bool>('./#nums/false'), isFalse);
+          });
+
+          group('parent node', () {
+            test('using ../', () {
+              expect(me.get<String>('../#hiDad'), 'Hi from dad.');
+
+              expect(me.get<int>('../#nums/int'), 42);
+              expect(me.get<double>('../#nums/double'), 3.14159);
+              expect(me.get<bool>('../#nums/true'), isTrue);
+              expect(me.get<bool>('../#nums/false'), isFalse);
+            });
+          });
+
+          group('self or any ancestors', () {
+            test('using no operator', () {
+              /*
+              expect(me.get<String>('#hiRoot'), 'Hi from root.');
+              expect(me.get<String>('#hiGrandpa'), 'Hi from grandpa.');
+              expect(me.get<String>('#hiDad'), 'Hi from dad.');
+              expect(me.get<String>('#hiMe'), 'Hi from me.');
+
+              expect(me.get<int>('#nums/int'), 42);
+              expect(me.get<double>('#nums/double'), 3.14159);
+              expect(me.get<bool>('#nums/true'), isTrue);
+              expect(me.get<bool>('#nums/false'), isFalse);
+              */
+            });
+          });
+        });
+
+        group('child nodes', () {
+          group('i.e. from own child nodes', () {
+            test('using ./child', () {
+              expect(me.get<String>('./child#hiChild'), 'Hi from child.');
+
+              expect(me.get<int>('./child#nums/int'), 42);
+              expect(me.get<double>('./child#nums/double'), 3.14159);
+              expect(me.get<bool>('./child#nums/true'), isTrue);
+              expect(me.get<bool>('./child#nums/false'), isFalse);
+            });
+
+            /* test('using ./child/grandchild', () {
+              expect(
+                me.get<String>('./child/grandchild#hiGrandchild'),
+                'Hi from grandchild.',
+              );
+
+              expect(me.get<String>('./child/grandchild#hiChild'), isNull);
+
+              expect(me.get<String>('./child/grandchild#hiGrandpa'), isNull);
+
+              expect(me.get<int>('./child/grandchild#nums/int'), 42);
+              expect(me.get<double>('./child/grandchild#nums/double'), 3.14159);
+              expect(me.get<bool>('./child/grandchild#nums/true'), isTrue);
+              expect(me.get<bool>('./child/grandchild#nums/false'), isFalse);
+            });*/
+          });
+        });
+
+        group('the node itself', () {
+          group('using node', () {
+            test('node/key', () {
+              expect(me.getOrNull<String>('./#node/key'), 'me');
+            });
+            test('node/childCount', () {
+              expect(me.getOrNull<int>('./#node/childCount'), 1);
+              expect(dad.getOrNull<int>('./#node/childCount'), 3);
+            });
+            test('node/index', () {
+              expect(me.getOrNull<int>('./#node/index'), 0);
+              expect(brother.getOrNull<int>('./#node/index'), 1);
+              expect(sister.getOrNull<int>('./#node/index'), 2);
+              expect(root.getOrNull<int>('./#node/index'), 0);
+            });
+            test('node/siblingsCount', () {
+              expect(me.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(brother.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(sister.getOrNull<int>('./#node/siblingsCount'), 3);
+              expect(root.getOrNull<int>('./#node/siblingsCount'), 1);
+            });
+            test('node/reverseIndex', () {
+              expect(me.getOrNull<int>('./#node/reverseIndex'), 2);
+              expect(brother.getOrNull<int>('./#node/reverseIndex'), 1);
+              expect(sister.getOrNull<int>('./#node/reverseIndex'), 0);
+              expect(root.getOrNull<int>('./#node/reverseIndex'), 0);
+            });
+            test('node/path', () {
+              expect(me.getOrNull<String>('./#node/path'), '/grandpa/dad/me');
+              expect(
+                brother.getOrNull<String>('./#node/path'),
+                '/grandpa/dad/brother',
+              );
+              expect(
+                sister.getOrNull<String>('./#node/path'),
+                '/grandpa/dad/sister',
+              );
+              expect(root.getOrNull<String>('./#node/path'), '/');
+            });
+            test('node/pathSimple', () {
+              me.key = 'me89';
+              brother.key = 'brother_90';
+
+              expect(
+                me.getOrNull<String>('./#node/pathSimple'),
+                '/grandpa/dad/me',
+              );
+              expect(
+                brother.getOrNull<String>('./#node/pathSimple'),
+                '/grandpa/dad/brother',
+              );
+              expect(
+                sister.getOrNull<String>('./#node/pathSimple'),
+                '/grandpa/dad/sister',
+              );
+              expect(root.getOrNull<String>('./#node/pathSimple'), '/');
+            });
+            test('node/isRoot', () {
+              expect(root.getOrNull<bool>('./#node/isRoot'), isTrue);
+              expect(sister.getOrNull<bool>('./#node/isRoot'), isFalse);
+            });
+          });
         });
       });
     });
@@ -882,28 +1030,47 @@ void main() {
       test('return all paths of the tree', () {
         expect(root.ls(), [
           '.',
+          './node',
           './grandpa',
+          './grandpa/node',
           './grandpa/dad',
+          './grandpa/dad/node',
           './grandpa/dad/me',
+          './grandpa/dad/me/node',
           './grandpa/dad/me/child',
+          './grandpa/dad/me/child/node',
           './grandpa/dad/me/child/grandchild',
+          './grandpa/dad/me/child/grandchild/node',
           './grandpa/dad/brother',
+          './grandpa/dad/brother/node',
           './grandpa/dad/sister',
+          './grandpa/dad/sister/node',
         ]);
 
-        expect(me.ls(), ['.', './child', './child/grandchild']);
+        expect(me.ls(), [
+          '.',
+          './node',
+          './child',
+          './child/node',
+          './child/grandchild',
+          './child/grandchild/node',
+        ]);
       });
 
       group('with where', () {
         test('returns all paths matching the given condition', () {
           expect(root.ls(where: (node) => node.key.startsWith('g')), [
             './grandpa',
+            './grandpa/node',
             './grandpa/dad/me/child/grandchild',
+            './grandpa/dad/me/child/grandchild/node',
           ]);
 
           expect(me.ls(where: (node) => node.key.contains('h')), [
             './child',
+            './child/node',
             './child/grandchild',
+            './child/grandchild/node',
           ]);
         });
       });

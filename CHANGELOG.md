@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Add node to output of ls
+
 ## [1.0.6] - 2026-02-04
 
 ### Fixed
@@ -67,6 +73,7 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.6...HEAD
 [1.0.6]: https://github.com/ggsuite/gg_tree/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/ggsuite/gg_tree/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/ggsuite/gg_tree/compare/1.0.3...1.0.4

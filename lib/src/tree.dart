@@ -77,6 +77,9 @@ class Tree<T extends TreeData> {
   )
   exampleNodes({String? key}) => _exampleNodes(key: key);
 
+  /// The key of the node info of the path
+  static const nodeInfoKey = 'node';
+
   // ...........................................................................
   /// Returns a string representation of this node
   @override
@@ -486,7 +489,7 @@ class Tree<T extends TreeData> {
     }
 
     // Read node data
-    final readTreeInfo = q.data.startsWith('node/');
+    final readTreeInfo = q.data.startsWith('$nodeInfoKey/');
     final dataKey = readTreeInfo ? q.data.substring(5) : q.data;
 
     // Iterate all nodes and apply the query
@@ -540,6 +543,7 @@ class Tree<T extends TreeData> {
   }) {
     if (where == null || where(this)) {
       paths.add(ownPath);
+      paths.add('$ownPath/$nodeInfoKey');
     }
 
     for (final child in children) {
