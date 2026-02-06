@@ -1,0 +1,10 @@
+[
+  ".",
+  "./grandpa",
+  "./grandpa/dad",
+  "./grandpa/dad/me",
+  "./grandpa/dad/me/child",
+  "./grandpa/dad/me/child/grandchild",
+  "./grandpa/dad/brother",
+  "./grandpa/dad/sister"
+]
