@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.8] - 2026-02-07
+
+### Added
+
+- add lsProps() to show all nodes along side with its propertie
+
 ## [1.0.7] - 2026-02-06
 
 ### Added
@@ -81,6 +87,7 @@
 
 - Initial implementation
 
+[1.0.8]: https://github.com/ggsuite/gg_tree/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/ggsuite/gg_tree/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/ggsuite/gg_tree/compare/1.0.5...1.0.6
 [1.0.5]: https://github.com/ggsuite/gg_tree/compare/1.0.4...1.0.5

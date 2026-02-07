@@ -252,13 +252,19 @@ class Tree<T extends TreeData> {
   List<String> ls({
     String prefix = '',
     bool Function(Tree<T> node)? where,
-    bool showDataPaths = true,
+    bool showDataPaths = false,
   }) {
     final paths = <String>[];
 
     _ls(paths, '.', where: where, showDataPaths: showDataPaths);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
   }
+
+  /// Shows all nodes together with properties
+  List<String> lsProps({
+    String prefix = '',
+    bool Function(Tree<T> node)? where,
+  }) => ls(prefix: prefix, where: where, showDataPaths: true);
 
   /// List all nodes
   Iterable<Tree<T>> lsNodes() {

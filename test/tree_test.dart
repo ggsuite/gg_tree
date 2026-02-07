@@ -1011,15 +1011,15 @@ void main() {
       });
     });
 
-    group('ls', () {
+    group('ls, lsProps', () {
       group('with showDataPaths', () {
         group('true', () {
           test('return all paths of the tree', () async {
-            final ls = root.ls();
+            final ls = root.lsProps();
             await writeGolden('root_ls.json', ls);
 
             expect(
-              root.ls(),
+              ls,
               containsAll([
                 '.',
                 '.#me',
@@ -1178,7 +1178,7 @@ void main() {
               ]),
             );
 
-            final meLs = me.ls();
+            final meLs = me.lsProps();
             await writeGolden('me_ls.json', meLs);
 
             expect(meLs, [
