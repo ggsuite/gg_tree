@@ -540,12 +540,29 @@ void main() {
             }
 
             expect(message, [
-              'Could not find node "wrong/node"',
+              'Cannot find node "wrong/node":',
               '',
-              'Possible paths:',
-              '  - .',
-              '  - ./child',
-              '  - ./child/grandchild',
+              'Available nodes:',
+              '  - child',
+              '  - child/grandchild',
+              '  - me',
+              '  - me/child',
+              '  - me/child/grandchild',
+              '  - brother',
+              '  - sister',
+              '  - dad',
+              '  - dad/me',
+              '  - dad/me/child',
+              '  - dad/me/child/grandchild',
+              '  - dad/brother',
+              '  - dad/sister',
+              '  - grandpa',
+              '  - grandpa/dad',
+              '  - grandpa/dad/me',
+              '  - grandpa/dad/me/child',
+              '  - grandpa/dad/me/child/grandchild',
+              '  - grandpa/dad/brother',
+              '  - grandpa/dad/sister',
             ]);
           });
 
@@ -560,59 +577,116 @@ void main() {
             expect(
               message,
               containsAll([
-                'Did not find property "#wrongField/"',
+                'Cannot resolve query "#wrongField".',
                 '',
-                '#me',
-                '#hiMe',
-                '#isAncestor',
-                '#nums',
-                '#nums/string',
-                '#nums/int',
-                '#nums/double',
-                '#nums/true',
-                '#nums/false',
-                '#nums/null',
-                '#node/.',
-                '#node/key',
-                '#node/originalKey',
-                '#node/isReadOnly',
-                '#node/childCount',
-                '#node/siblingsCount',
-                '#node/index',
-                '#node/reverseIndex',
-                '#node/path',
-                '#node/pathSimple',
-                '#node/isRoot',
-                '#hiChild',
+                'Available paths:',
+                '  - #me',
+                '  - #hiMe',
+                '  - #isAncestor',
+                '  - #nums',
+                '  - #nums/string',
+                '  - #nums/int',
+                '  - #nums/double',
+                '  - #nums/true',
+                '  - #nums/false',
+                '  - #nums/null',
+                '  - #node/.',
+                '  - #node/key',
+                '  - #node/originalKey',
+                '  - #node/isReadOnly',
+                '  - #node/childCount',
+                '  - #node/siblingsCount',
+                '  - #node/index',
+                '  - #node/reverseIndex',
+                '  - #node/path',
+                '  - #node/pathSimple',
+                '  - #node/isRoot',
+                '  - #hiChild',
+                '  - #hiGrandchild',
+                '  - #hiDad',
+                '  - #hiBrother',
+                '  - #hiGrandpa',
+                '  - #hiRoot',
+              ]),
+            );
+          });
+
+          test('with an existing node but not existing field', () {
+            var message = <String>[];
+            try {
+              me.get<String>('../../dad#wrongField');
+            } catch (e) {
+              message = (e as dynamic).message.toString().trim().split('\n');
+            }
+
+            expect(
+              message,
+              containsAll([
+                'Cannot resolve query "../../dad#wrongField".',
+                '',
+                'Available paths:',
+                '  - ../../dad#me',
+                '  - ../../dad#hiMe',
+                '  - ../../dad#isAncestor',
+                '  - ../../dad#nums',
+                '  - ../../dad#nums/string',
+                '  - ../../dad#nums/int',
+                '  - ../../dad#nums/double',
+                '  - ../../dad#nums/true',
+                '  - ../../dad#nums/false',
+                '  - ../../dad#nums/null',
+                '  - ../../dad#node/.',
+                '  - ../../dad#node/key',
+                '  - ../../dad#node/originalKey',
+                '  - ../../dad#node/isReadOnly',
+                '  - ../../dad#node/childCount',
+                '  - ../../dad#node/siblingsCount',
+                '  - ../../dad#node/index',
+                '  - ../../dad#node/reverseIndex',
+                '  - ../../dad#node/path',
+                '  - ../../dad#node/pathSimple',
+                '  - ../../dad#node/isRoot',
               ]),
             );
           });
         });
 
-        test('when the field is not found', () {
+        test('when the node is not found', () {
           var message = <String>[];
           try {
-            me.get<String>('../#wrongField');
+            me.get<String>('wrongNode#x/y/z');
           } catch (e) {
             message = (e as dynamic).message.toString().trim().split('\n');
           }
 
-          expect(message, [
-            'Value at path "wrongField/" not found.',
-            '',
-            'Available paths:',
-            '  - .',
-            '  - ./me',
-            '  - ./hiDad',
-            '  - ./isAncestor',
-            '  - ./nums',
-            '  - ./nums/string',
-            '  - ./nums/int',
-            '  - ./nums/double',
-            '  - ./nums/true',
-            '  - ./nums/false',
-            '  - ./nums/null',
-          ]);
+          expect(
+            message,
+            containsAll([
+              'Cannot find node "wrongNode":',
+              '',
+              'Available nodes:',
+              '  - child',
+              '  - child/grandchild',
+              '  - me',
+              '  - me/child',
+              '  - me/child/grandchild',
+              '  - brother',
+              '  - sister',
+              '  - dad',
+              '  - dad/me',
+              '  - dad/me/child',
+              '  - dad/me/child/grandchild',
+              '  - dad/brother',
+              '  - dad/sister',
+              '  - grandpa',
+              '  - grandpa/dad',
+              '  - grandpa/dad/me',
+              '  - grandpa/dad/me/child',
+              '  - grandpa/dad/me/child/grandchild',
+              '  - grandpa/dad/brother',
+              '  - grandpa/dad/sister',
+            ]),
+          );
         });
       });
 

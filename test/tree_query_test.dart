@@ -11,7 +11,7 @@ void main() {
   group('TreeQuery', () {
     group('example()', () {
       test('creates an example object', () {
-        expect(TreeQuery.example().node, './x/y/');
+        expect(TreeQuery.example().node, './x/y');
       });
     });
 
@@ -49,21 +49,21 @@ void main() {
           expect(TreeQuery('#a/b/c').node, '');
         });
         test('the path part before the route', () {
-          expect(TreeQuery('x/y/z#a/b/c').node, 'x/y/z/');
+          expect(TreeQuery('x/y/z#a/b/c').node, 'x/y/z');
         });
       });
 
       group('add a trailing slash when not present', () {
         test('when node path is not ./, ../ or .../', () {
-          expect(TreeQuery('x/y/z#a/b/c').node, 'x/y/z/');
-          expect(TreeQuery('.#a/b/c').node, './');
-          expect(TreeQuery('..#a/b/c').node, '../');
-          expect(TreeQuery('...#a/b/c').node, '.../');
+          expect(TreeQuery('x/y/z#a/b/c').node, 'x/y/z');
+          expect(TreeQuery('.#a/b/c').node, '.');
+          expect(TreeQuery('..#a/b/c').node, '..');
+          expect(TreeQuery('...#a/b/c').node, '...');
         });
       });
 
       test('returns not the trailing slash', () {
-        expect(TreeQuery('/x/y/z#a/b/c').node, '/x/y/z/');
+        expect(TreeQuery('/x/y/z#a/b/c').node, '/x/y/z');
       });
     });
 

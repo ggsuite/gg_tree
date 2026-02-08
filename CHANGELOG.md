@@ -1,10 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.9] - 2026-02-08
 
 ### Changed
 
 - improve error messages when working with a wrong field
+- Improve output on querying wrong paths
 
 ## [1.0.8] - 2026-02-07
 
@@ -93,7 +94,7 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.8...HEAD
+[1.0.9]: https://github.com/ggsuite/gg_tree/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/ggsuite/gg_tree/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/ggsuite/gg_tree/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/ggsuite/gg_tree/compare/1.0.5...1.0.6

@@ -520,28 +520,30 @@ class Tree<T extends TreeData> {
     final dataKey = readTreeInfo ? q.data.substring(5) : q.data;
 
     // Iterate all nodes and apply the query
+    var didFindAnyNode = false;
+
     for (final node in nodes) {
+      // Get the child node described in q.node
       final dataNode = node.childByPathOrNull(q.node);
       if (dataNode == null) {
         continue;
       }
+      didFindAnyNode = true;
 
       final value = readTreeInfo
           ? dataNode._treeInfo<V>(dataKey)
-          : dataNode.dataJson.getOrNull<V>(
-              q.data,
-              throwWhenNotFound: q.searchToRoot ? false : throwWhenNotFound,
-            );
+          : dataNode.dataJson.getOrNull<V>(q.data);
+
       if (value != null) {
         return value;
       }
     }
 
     if (throwWhenNotFound) {
-      if (q.nodeSegments.isNotEmpty) {
-        _throwRelativePathNotFound(q.nodeSegments, this, []);
+      if (!didFindAnyNode) {
+        _throwNodeNotFound(q.node, nodes);
       } else {
-        _throwPropNotFound(q.data, nodes);
+        _throwPropNotFound(query, q.node, q.data, nodes);
       }
     }
 
@@ -906,20 +908,53 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  void _throwPropNotFound(String prop, Iterable<Tree> nodes) {
-    final allProps = <String>{};
-    for (final node in nodes) {
-      allProps.addAll(
-        node
-            .lsProps()
-            .map((e) => e.split('#').last)
-            .where((e) => e.isNotEmpty && e != '.')
-            .map((e) => '#$e'),
+  void _throwNodeNotFound(String nodeName, Iterable<Tree> ancestors) {
+    final allNodes = <String>[];
+
+    for (final a in ancestors) {
+      allNodes.addAll(
+        a
+            .ls()
+            .where((element) => element != '.')
+            .map((e) => e.replaceFirst('./', '')),
       );
     }
 
     throw Exception(
-      ['Did not find property "#$prop"', '', ...allProps].join('\n'),
+      [
+        'Cannot find node "$nodeName":',
+        '',
+        'Available nodes:',
+        ...allNodes.map((e) => '  - $e'),
+      ].join('\n'),
+    );
+  }
+
+  // ...........................................................................
+  void _throwPropNotFound(
+    String query,
+    String nodePath,
+    String prop,
+    Iterable<Tree> nodes,
+  ) {
+    final allProps = <String>{};
+    for (final n in nodes) {
+      allProps.addAll(
+        n
+            .lsProps()
+            .map((e) => e.split('#').last)
+            .where((e) => e.isNotEmpty && e != '.')
+            .map((e) => '  - $nodePath#$e'),
+      );
+    }
+
+    throw Exception(
+      [
+        'Cannot resolve query "$query".',
+        '',
+        'Available paths:',
+        ...allProps,
+      ].join('\n'),
     );
   }
 

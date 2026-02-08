@@ -67,7 +67,7 @@ class TreeQuery {
     if (parts.length == 1) {
       throw Exception('Query $_q must only contain exactly one #.');
     } else if (parts.length == 2) {
-      node = _addTrailingSlash(parts.first);
+      node = parts.first;
       data = _addTrailingSlash(_removeLeadingSlash(parts.last));
     } else {
       throw Exception('Query $_q must only contain one #.');
