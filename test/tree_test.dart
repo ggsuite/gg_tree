@@ -530,22 +530,63 @@ void main() {
 
     group('get', () {
       group('throws', () {
-        test('when node is not found', () {
-          var message = <String>[];
-          try {
-            me.get<String>('wrong/node#field');
-          } catch (e) {
-            message = (e as dynamic).message.toString().trim().split('\n');
-          }
+        group('when node is not found', () {
+          test('with a node and a field', () {
+            var message = <String>[];
+            try {
+              me.get<String>('wrong/node#field');
+            } catch (e) {
+              message = (e as dynamic).message.toString().trim().split('\n');
+            }
 
-          expect(message, [
-            'Could not find node "wrong/node"',
-            '',
-            'Possible paths:',
-            '  - .',
-            '  - ./child',
-            '  - ./child/grandchild',
-          ]);
+            expect(message, [
+              'Could not find node "wrong/node"',
+              '',
+              'Possible paths:',
+              '  - .',
+              '  - ./child',
+              '  - ./child/grandchild',
+            ]);
+          });
+
+          test('with just a non existing field', () {
+            var message = <String>[];
+            try {
+              me.get<String>('#wrongField');
+            } catch (e) {
+              message = (e as dynamic).message.toString().trim().split('\n');
+            }
+
+            expect(
+              message,
+              containsAll([
+                'Did not find property "#wrongField/"',
+                '',
+                '#me',
+                '#hiMe',
+                '#isAncestor',
+                '#nums',
+                '#nums/string',
+                '#nums/int',
+                '#nums/double',
+                '#nums/true',
+                '#nums/false',
+                '#nums/null',
+                '#node/.',
+                '#node/key',
+                '#node/originalKey',
+                '#node/isReadOnly',
+                '#node/childCount',
+                '#node/siblingsCount',
+                '#node/index',
+                '#node/reverseIndex',
+                '#node/path',
+                '#node/pathSimple',
+                '#node/isRoot',
+                '#hiChild',
+              ]),
+            );
+          });
         });
 
         test('when the field is not found', () {
@@ -1014,17 +1055,47 @@ void main() {
     group('ls, lsProps', () {
       group('with showDataPaths', () {
         group('true', () {
-          test('return all paths of the tree', () async {
-            final ls = root.lsProps();
-            await writeGolden('root_ls.json', ls);
+          group('return all paths of the tree', () {
+            test('for node root', () async {
+              final ls = root.lsProps();
+              await writeGolden('root_ls.json', ls);
 
-            expect(
-              ls,
-              containsAll([
-                '.',
+              expect(
+                ls,
+                containsAll([
+                  '.#node/path',
+                  '.#node/pathSimple',
+                  '.#node/isRoot',
+                  './grandpa#.',
+                  './grandpa#me',
+                  './grandpa#hiGrandpa',
+                  './grandpa#isAncestor',
+                  './grandpa#node/.',
+                  './grandpa#node/key',
+                  './grandpa#node/originalKey',
+                  './grandpa#node/isReadOnly',
+                  './grandpa#node/childCount',
+                ]),
+              );
+            });
+
+            test('for node me', () async {
+              final meLs = me.lsProps();
+              await writeGolden('me_ls.json', meLs);
+
+              expect(meLs, [
+                '.#.',
                 '.#me',
-                '.#hiRoot',
+                '.#hiMe',
                 '.#isAncestor',
+                '.#nums',
+                '.#nums/string',
+                '.#nums/int',
+                '.#nums/double',
+                '.#nums/true',
+                '.#nums/false',
+                '.#nums/null',
+                '.#node/.',
                 '.#node/key',
                 '.#node/originalKey',
                 '.#node/isReadOnly',
@@ -1035,223 +1106,58 @@ void main() {
                 '.#node/path',
                 '.#node/pathSimple',
                 '.#node/isRoot',
-                './grandpa',
-                './grandpa#me',
-                './grandpa#hiGrandpa',
-                './grandpa#isAncestor',
-                './grandpa#node/key',
-                './grandpa#node/originalKey',
-                './grandpa#node/isReadOnly',
-                './grandpa#node/childCount',
-                './grandpa#node/siblingsCount',
-                './grandpa#node/index',
-                './grandpa#node/reverseIndex',
-                './grandpa#node/path',
-                './grandpa#node/pathSimple',
-                './grandpa#node/isRoot',
-                './grandpa/dad',
-                './grandpa/dad#me',
-                './grandpa/dad#hiDad',
-                './grandpa/dad#isAncestor',
-                './grandpa/dad#nums',
-                './grandpa/dad#nums/string',
-                './grandpa/dad#nums/int',
-                './grandpa/dad#nums/double',
-                './grandpa/dad#nums/true',
-                './grandpa/dad#nums/false',
-                './grandpa/dad#nums/null',
-                './grandpa/dad#node/key',
-                './grandpa/dad#node/originalKey',
-                './grandpa/dad#node/isReadOnly',
-                './grandpa/dad#node/childCount',
-                './grandpa/dad#node/siblingsCount',
-                './grandpa/dad#node/index',
-                './grandpa/dad#node/reverseIndex',
-                './grandpa/dad#node/path',
-                './grandpa/dad#node/pathSimple',
-                './grandpa/dad#node/isRoot',
-                './grandpa/dad/me',
-                './grandpa/dad/me#me',
-                './grandpa/dad/me#hiMe',
-                './grandpa/dad/me#isAncestor',
-                './grandpa/dad/me#nums',
-                './grandpa/dad/me#nums/string',
-                './grandpa/dad/me#nums/int',
-                './grandpa/dad/me#nums/double',
-                './grandpa/dad/me#nums/true',
-                './grandpa/dad/me#nums/false',
-                './grandpa/dad/me#nums/null',
-                './grandpa/dad/me#node/key',
-                './grandpa/dad/me#node/originalKey',
-                './grandpa/dad/me#node/isReadOnly',
-                './grandpa/dad/me#node/childCount',
-                './grandpa/dad/me#node/siblingsCount',
-                './grandpa/dad/me#node/index',
-                './grandpa/dad/me#node/reverseIndex',
-                './grandpa/dad/me#node/path',
-                './grandpa/dad/me#node/pathSimple',
-                './grandpa/dad/me#node/isRoot',
-                './grandpa/dad/me/child',
-                './grandpa/dad/me/child#me',
-                './grandpa/dad/me/child#hiChild',
-                './grandpa/dad/me/child#isAncestor',
-                './grandpa/dad/me/child#nums',
-                './grandpa/dad/me/child#nums/string',
-                './grandpa/dad/me/child#nums/int',
-                './grandpa/dad/me/child#nums/double',
-                './grandpa/dad/me/child#nums/true',
-                './grandpa/dad/me/child#nums/false',
-                './grandpa/dad/me/child#nums/null',
-                './grandpa/dad/me/child#node/key',
-                './grandpa/dad/me/child#node/originalKey',
-                './grandpa/dad/me/child#node/isReadOnly',
-                './grandpa/dad/me/child#node/childCount',
-                './grandpa/dad/me/child#node/siblingsCount',
-                './grandpa/dad/me/child#node/index',
-                './grandpa/dad/me/child#node/reverseIndex',
-                './grandpa/dad/me/child#node/path',
-                './grandpa/dad/me/child#node/pathSimple',
-                './grandpa/dad/me/child#node/isRoot',
-                './grandpa/dad/me/child/grandchild',
-                './grandpa/dad/me/child/grandchild#me',
-                './grandpa/dad/me/child/grandchild#hiGrandchild',
-                './grandpa/dad/me/child/grandchild#isAncestor',
-                './grandpa/dad/me/child/grandchild#nums',
-                './grandpa/dad/me/child/grandchild#nums/string',
-                './grandpa/dad/me/child/grandchild#nums/int',
-                './grandpa/dad/me/child/grandchild#nums/double',
-                './grandpa/dad/me/child/grandchild#nums/true',
-                './grandpa/dad/me/child/grandchild#nums/false',
-                './grandpa/dad/me/child/grandchild#nums/null',
-                './grandpa/dad/me/child/grandchild#node/key',
-                './grandpa/dad/me/child/grandchild#node/originalKey',
-                './grandpa/dad/me/child/grandchild#node/isReadOnly',
-                './grandpa/dad/me/child/grandchild#node/childCount',
-                './grandpa/dad/me/child/grandchild#node/siblingsCount',
-                './grandpa/dad/me/child/grandchild#node/index',
-                './grandpa/dad/me/child/grandchild#node/reverseIndex',
-                './grandpa/dad/me/child/grandchild#node/path',
-                './grandpa/dad/me/child/grandchild#node/pathSimple',
-                './grandpa/dad/me/child/grandchild#node/isRoot',
-                './grandpa/dad/brother',
-                './grandpa/dad/brother#me',
-                './grandpa/dad/brother#hiBrother',
-                './grandpa/dad/brother#isAncestor',
-                './grandpa/dad/brother#nums',
-                './grandpa/dad/brother#nums/string',
-                './grandpa/dad/brother#nums/int',
-                './grandpa/dad/brother#nums/double',
-                './grandpa/dad/brother#nums/true',
-                './grandpa/dad/brother#nums/false',
-                './grandpa/dad/brother#nums/null',
-                './grandpa/dad/brother#node/key',
-                './grandpa/dad/brother#node/originalKey',
-                './grandpa/dad/brother#node/isReadOnly',
-                './grandpa/dad/brother#node/childCount',
-                './grandpa/dad/brother#node/siblingsCount',
-                './grandpa/dad/brother#node/index',
-                './grandpa/dad/brother#node/reverseIndex',
-                './grandpa/dad/brother#node/path',
-                './grandpa/dad/brother#node/pathSimple',
-                './grandpa/dad/brother#node/isRoot',
-                './grandpa/dad/sister',
-                './grandpa/dad/sister#me',
-                './grandpa/dad/sister#hiBrother',
-                './grandpa/dad/sister#isAncestor',
-                './grandpa/dad/sister#nums',
-                './grandpa/dad/sister#nums/string',
-                './grandpa/dad/sister#nums/int',
-                './grandpa/dad/sister#nums/double',
-                './grandpa/dad/sister#nums/true',
-                './grandpa/dad/sister#nums/false',
-                './grandpa/dad/sister#nums/null',
-                './grandpa/dad/sister#node/key',
-                './grandpa/dad/sister#node/originalKey',
-                './grandpa/dad/sister#node/isReadOnly',
-                './grandpa/dad/sister#node/childCount',
-                './grandpa/dad/sister#node/siblingsCount',
-                './grandpa/dad/sister#node/index',
-                './grandpa/dad/sister#node/reverseIndex',
-                './grandpa/dad/sister#node/path',
-                './grandpa/dad/sister#node/pathSimple',
-                './grandpa/dad/sister#node/isRoot',
-              ]),
-            );
-
-            final meLs = me.lsProps();
-            await writeGolden('me_ls.json', meLs);
-
-            expect(meLs, [
-              '.',
-              '.#me',
-              '.#hiMe',
-              '.#isAncestor',
-              '.#nums',
-              '.#nums/string',
-              '.#nums/int',
-              '.#nums/double',
-              '.#nums/true',
-              '.#nums/false',
-              '.#nums/null',
-              '.#node/key',
-              '.#node/originalKey',
-              '.#node/isReadOnly',
-              '.#node/childCount',
-              '.#node/siblingsCount',
-              '.#node/index',
-              '.#node/reverseIndex',
-              '.#node/path',
-              '.#node/pathSimple',
-              '.#node/isRoot',
-              './child',
-              './child#me',
-              './child#hiChild',
-              './child#isAncestor',
-              './child#nums',
-              './child#nums/string',
-              './child#nums/int',
-              './child#nums/double',
-              './child#nums/true',
-              './child#nums/false',
-              './child#nums/null',
-              './child#node/key',
-              './child#node/originalKey',
-              './child#node/isReadOnly',
-              './child#node/childCount',
-              './child#node/siblingsCount',
-              './child#node/index',
-              './child#node/reverseIndex',
-              './child#node/path',
-              './child#node/pathSimple',
-              './child#node/isRoot',
-              './child/grandchild',
-              './child/grandchild#me',
-              './child/grandchild#hiGrandchild',
-              './child/grandchild#isAncestor',
-              './child/grandchild#nums',
-              './child/grandchild#nums/string',
-              './child/grandchild#nums/int',
-              './child/grandchild#nums/double',
-              './child/grandchild#nums/true',
-              './child/grandchild#nums/false',
-              './child/grandchild#nums/null',
-              './child/grandchild#node/key',
-              './child/grandchild#node/originalKey',
-              './child/grandchild#node/isReadOnly',
-              './child/grandchild#node/childCount',
-              './child/grandchild#node/siblingsCount',
-              './child/grandchild#node/index',
-              './child/grandchild#node/reverseIndex',
-              './child/grandchild#node/path',
-              './child/grandchild#node/pathSimple',
-              './child/grandchild#node/isRoot',
-            ]);
+                './child#.',
+                './child#me',
+                './child#hiChild',
+                './child#isAncestor',
+                './child#nums',
+                './child#nums/string',
+                './child#nums/int',
+                './child#nums/double',
+                './child#nums/true',
+                './child#nums/false',
+                './child#nums/null',
+                './child#node/.',
+                './child#node/key',
+                './child#node/originalKey',
+                './child#node/isReadOnly',
+                './child#node/childCount',
+                './child#node/siblingsCount',
+                './child#node/index',
+                './child#node/reverseIndex',
+                './child#node/path',
+                './child#node/pathSimple',
+                './child#node/isRoot',
+                './child/grandchild#.',
+                './child/grandchild#me',
+                './child/grandchild#hiGrandchild',
+                './child/grandchild#isAncestor',
+                './child/grandchild#nums',
+                './child/grandchild#nums/string',
+                './child/grandchild#nums/int',
+                './child/grandchild#nums/double',
+                './child/grandchild#nums/true',
+                './child/grandchild#nums/false',
+                './child/grandchild#nums/null',
+                './child/grandchild#node/.',
+                './child/grandchild#node/key',
+                './child/grandchild#node/originalKey',
+                './child/grandchild#node/isReadOnly',
+                './child/grandchild#node/childCount',
+                './child/grandchild#node/siblingsCount',
+                './child/grandchild#node/index',
+                './child/grandchild#node/reverseIndex',
+                './child/grandchild#node/path',
+                './child/grandchild#node/pathSimple',
+                './child/grandchild#node/isRoot',
+              ]);
+            });
           });
         });
 
         group('false', () {
           test('shows only the node paths', () async {
-            final ls = root.ls(showDataPaths: false);
+            final ls = root.ls(showProps: false);
             await writeGolden('root_ls_without_data_paths.json', ls);
 
             expect(
@@ -1268,7 +1174,7 @@ void main() {
               ]),
             );
 
-            final meLs = me.ls(showDataPaths: false);
+            final meLs = me.ls(showProps: false);
             await writeGolden('me_ls.json', meLs);
 
             expect(meLs, ['.', './child', './child/grandchild']);
@@ -1281,16 +1187,13 @@ void main() {
           expect(
             root.ls(
               where: (node) => node.key.startsWith('g'),
-              showDataPaths: false,
+              showProps: false,
             ),
             ['./grandpa', './grandpa/dad/me/child/grandchild'],
           );
 
           expect(
-            me.ls(
-              where: (node) => node.key.contains('h'),
-              showDataPaths: false,
-            ),
+            me.ls(where: (node) => node.key.contains('h'), showProps: false),
             ['./child', './child/grandchild'],
           );
         });

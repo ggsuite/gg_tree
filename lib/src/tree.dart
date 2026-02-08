@@ -252,11 +252,11 @@ class Tree<T extends TreeData> {
   List<String> ls({
     String prefix = '',
     bool Function(Tree<T> node)? where,
-    bool showDataPaths = false,
+    bool showProps = false,
   }) {
     final paths = <String>[];
 
-    _ls(paths, '.', where: where, showDataPaths: showDataPaths);
+    _ls(paths, '.', where: where, showProps: showProps);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
   }
 
@@ -264,7 +264,7 @@ class Tree<T extends TreeData> {
   List<String> lsProps({
     String prefix = '',
     bool Function(Tree<T> node)? where,
-  }) => ls(prefix: prefix, where: where, showDataPaths: true);
+  }) => ls(prefix: prefix, where: where, showProps: true);
 
   /// List all nodes
   Iterable<Tree<T>> lsNodes() {
@@ -422,7 +422,7 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  Json _ownJson(Tree tree, bool addComputed) {
+  Json _treeProps(Tree tree, bool addComputed) {
     final json = <String, dynamic>{};
 
     final siblingsCount = tree.parent?.children.length ?? 1;
@@ -461,7 +461,7 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   Json _toJson(Tree tree, {bool onlyOwn = false, bool addComputed = false}) {
     final json = Json();
-    json.addAll(_ownJson(tree, addComputed));
+    json.addAll(_treeProps(tree, addComputed));
 
     if (onlyOwn) {
       return json;
@@ -538,7 +538,11 @@ class Tree<T extends TreeData> {
     }
 
     if (throwWhenNotFound) {
-      _throwRelativePathNotFound(q.nodeSegments, this, []);
+      if (q.nodeSegments.isNotEmpty) {
+        _throwRelativePathNotFound(q.nodeSegments, this, []);
+      } else {
+        _throwPropNotFound(q.data, nodes);
+      }
     }
 
     return null;
@@ -576,16 +580,18 @@ class Tree<T extends TreeData> {
     List<String> paths,
     String ownPath, {
     bool Function(Tree<T> node)? where,
-    bool showDataPaths = true,
+    bool showProps = true,
   }) {
     if (where == null || where(this)) {
-      paths.add(ownPath);
+      if (!showProps) {
+        paths.add(ownPath);
+      }
 
-      // Write own paths
-      _addDataPaths(showDataPaths, paths, ownPath, showNodePaths: false);
+      // Write data properties
+      _addProps(showProps, paths, ownPath, addTreeProps: false);
 
-      // Write data paths
-      _addDataPaths(showDataPaths, paths, ownPath, showNodePaths: true);
+      // Write tree properties
+      _addProps(showProps, paths, ownPath, addTreeProps: true);
     }
 
     for (final child in children) {
@@ -593,27 +599,23 @@ class Tree<T extends TreeData> {
         paths,
         '$ownPath/${child.key}',
         where: where,
-        showDataPaths: showDataPaths,
+        showProps: showProps,
       );
     }
   }
 
-  void _addDataPaths(
+  void _addProps(
     bool showDataPaths,
     List<String> paths,
     String ownPath, {
-    required bool showNodePaths,
+    required bool addTreeProps,
   }) {
     if (showDataPaths) {
-      final dataPaths = showNodePaths
-          ? _ownJson(this, true).ls()
+      final dataPaths = addTreeProps
+          ? _treeProps(this, true).ls()
           : dataJson.ls();
-      for (final dataPath in dataPaths) {
-        if (dataPath == '.') {
-          continue;
-        }
-
-        final node = showNodePaths ? 'node/' : '';
+      for (var dataPath in dataPaths) {
+        final node = addTreeProps ? 'node/' : '';
         paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
       }
     }
@@ -860,7 +862,7 @@ class Tree<T extends TreeData> {
   ) {
     final prefix = okSegments.join('/');
     final possiblePaths = node
-        .ls(showDataPaths: false)
+        .ls(showProps: false)
         .map((e) => '  - /$prefix${e.substring(1)}');
 
     throw Exception(
@@ -891,7 +893,7 @@ class Tree<T extends TreeData> {
   ) {
     final prefix = okSegments.join('/');
     final possiblePaths = node
-        .ls(showDataPaths: false)
+        .ls(showProps: false)
         .map((e) => '  - ${_createRelativePath(e, prefix)}');
     throw Exception(
       [
@@ -900,6 +902,24 @@ class Tree<T extends TreeData> {
         'Possible paths:',
         ...possiblePaths,
       ].join('\n'),
+    );
+  }
+
+  // ...........................................................................
+  void _throwPropNotFound(String prop, Iterable<Tree> nodes) {
+    final allProps = <String>{};
+    for (final node in nodes) {
+      allProps.addAll(
+        node
+            .lsProps()
+            .map((e) => e.split('#').last)
+            .where((e) => e.isNotEmpty && e != '.')
+            .map((e) => '#$e'),
+      );
+    }
+
+    throw Exception(
+      ['Did not find property "#$prop"', '', ...allProps].join('\n'),
     );
   }
 

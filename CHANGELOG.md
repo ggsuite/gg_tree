@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- improve error messages when working with a wrong field
+
 ## [1.0.8] - 2026-02-07
 
 ### Added
@@ -87,6 +93,7 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.8...HEAD
 [1.0.8]: https://github.com/ggsuite/gg_tree/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/ggsuite/gg_tree/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/ggsuite/gg_tree/compare/1.0.5...1.0.6
