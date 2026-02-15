@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.11] - 2026-02-15
+
+### Changed
+
+- ChildIterator: Improve return types
+
 ## [1.0.10] - 2026-02-15
 
 ### Added
@@ -100,6 +106,7 @@
 
 - Initial implementation
 
+[1.0.11]: https://github.com/ggsuite/gg_tree/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/ggsuite/gg_tree/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/ggsuite/gg_tree/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/ggsuite/gg_tree/compare/1.0.7...1.0.8

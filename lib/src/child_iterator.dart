@@ -7,10 +7,10 @@
 import 'package:gg_tree/gg_tree.dart';
 
 /// Determines if a layout needs a structural shelf.
-class ChildIterator<T> {
+class ChildIterator<T extends TreeData> {
   // ...........................................................................
   /// Returns the class from a slot tree
-  factory ChildIterator({required Tree slotTree, required int i}) {
+  factory ChildIterator({required Tree<T> slotTree, required int i}) {
     if (i < 0 || i >= slotTree.children.length) {
       throw Exception('Index $i of "${slotTree.key}" exceeds bounds.');
     }
@@ -30,7 +30,7 @@ class ChildIterator<T> {
 
   // ...........................................................................
   /// Example iterator for test purposes
-  factory ChildIterator.example() =>
+  static ChildIterator<ExampleData> example() =>
       ChildIterator(slotTree: Tree.example().parent!, i: 0);
 
   // ...........................................................................
@@ -47,17 +47,17 @@ class ChildIterator<T> {
   /// The index of the current item
   final int i;
 
-  /// The paremt item
-  final Tree parent;
+  /// The parent item
+  final Tree<T> parent;
 
   /// The previous item
-  final Tree? previous;
+  final Tree<T>? previous;
 
   /// The current item
-  final Tree current;
+  final Tree<T> current;
 
   /// The next item
-  final Tree? next;
+  final Tree<T>? next;
 
   // ...........................................................................
   /// Returns true if item is the last item
