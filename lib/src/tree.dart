@@ -189,7 +189,7 @@ class Tree<T extends TreeData> {
   bool hasChildWithKey(String key) => childByKey(key) != null;
 
   /// Returns a child iterator for the children of this node
-  ChildIterator<T> get childIterator => ChildIterator(slotTree: this, i: 0);
+  ChildIterator<T> get childIterator => ChildIterator(tree: this, i: 0);
 
   // ...........................................................................
   /// Returns the child node by path or null if not found

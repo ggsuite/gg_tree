@@ -10,17 +10,17 @@ import 'package:gg_tree/gg_tree.dart';
 class ChildIterator<T extends TreeData> {
   // ...........................................................................
   /// Returns the class from a slot tree
-  factory ChildIterator({required Tree<T> slotTree, required int i}) {
-    if (i < 0 || i >= slotTree.children.length) {
-      throw Exception('Index $i of "${slotTree.key}" exceeds bounds.');
+  factory ChildIterator({required Tree<T> tree, required int i}) {
+    if (i < 0 || i >= tree.children.length) {
+      throw Exception('Index $i of "${tree.key}" exceeds bounds.');
     }
 
-    final current = slotTree.children.elementAt(i);
-    final previous = i > 0 ? slotTree.children.elementAt(i - 1) : null;
-    final next = slotTree.children.elementAtOrNull(i + 1);
+    final current = tree.children.elementAt(i);
+    final previous = i > 0 ? tree.children.elementAt(i - 1) : null;
+    final next = tree.children.elementAtOrNull(i + 1);
 
     return ChildIterator._(
-      parent: slotTree,
+      parent: tree,
       i: i,
       current: current,
       next: next,
@@ -31,7 +31,7 @@ class ChildIterator<T extends TreeData> {
   // ...........................................................................
   /// Example iterator for test purposes
   static ChildIterator<ExampleData> example() =>
-      ChildIterator(slotTree: Tree.example().parent!, i: 0);
+      ChildIterator(tree: Tree.example().parent!, i: 0);
 
   // ...........................................................................
   /// Jumps to the next item
@@ -41,7 +41,7 @@ class ChildIterator<T extends TreeData> {
   ChildIterator<T> get backward => jump(i - 1);
 
   /// Jumps to the specific item
-  ChildIterator<T> jump(int i) => ChildIterator(slotTree: parent, i: i);
+  ChildIterator<T> jump(int i) => ChildIterator(tree: parent, i: i);
 
   // ...........................................................................
   /// The index of the current item
