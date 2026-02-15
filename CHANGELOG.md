@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.12] - 2026-02-15
 
 ### Changed
 
@@ -112,7 +112,7 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.11...HEAD
+[1.0.12]: https://github.com/ggsuite/gg_tree/compare/1.0.11...1.0.12
 [1.0.11]: https://github.com/ggsuite/gg_tree/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/ggsuite/gg_tree/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/ggsuite/gg_tree/compare/1.0.8...1.0.9
