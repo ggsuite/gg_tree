@@ -273,6 +273,15 @@ void main() {
       });
     });
 
+    group('childIterator', () {
+      test('returns a child itertorator for the children of this node', () {
+        final iterator = dad.childIterator;
+        expect(iterator.current, me);
+        expect(iterator.next, brother);
+        expect(iterator.previous, isNull);
+      });
+    });
+
     group('root', () {
       test('returns the root node', () {
         expect(root.root, same(root));

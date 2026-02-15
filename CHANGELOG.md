@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.10] - 2026-02-15
+
+### Added
+
+- Add ChildIterator
+
 ## [1.0.9] - 2026-02-08
 
 ### Changed
@@ -94,6 +100,7 @@
 
 - Initial implementation
 
+[1.0.10]: https://github.com/ggsuite/gg_tree/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/ggsuite/gg_tree/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/ggsuite/gg_tree/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/ggsuite/gg_tree/compare/1.0.6...1.0.7

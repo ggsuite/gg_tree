@@ -6,6 +6,7 @@
 
 library;
 
+export 'src/child_iterator.dart';
 export 'src/tools.dart';
 export 'src/tree.dart';
 export 'src/tree_data.dart';
