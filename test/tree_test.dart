@@ -1536,5 +1536,74 @@ void main() {
         ]);
       });
     });
+
+    group('visit', () {
+      group('visits all nodes in the tree', () {
+        test('with topDown = true', () {
+          final visitedKeys = <String>[];
+          root.visit((node) => visitedKeys.add(node.key));
+
+          expect(visitedKeys, [
+            'root',
+            'grandpa',
+            'dad',
+            'me',
+            'child',
+            'grandchild',
+            'brother',
+            'sister',
+          ]);
+        });
+
+        test('with topDown = false', () {
+          final visitedKeys = <String>[];
+          root.visit((node) => visitedKeys.add(node.key), topDown: false);
+
+          expect(visitedKeys, [
+            'grandchild',
+            'child',
+            'me',
+            'brother',
+            'sister',
+            'dad',
+            'grandpa',
+            'root',
+          ]);
+        });
+      });
+    });
+
+    group('with stopAfter', () {
+      test('stops visiting when the callback returns false', () {
+        final visitedKeys = <String>[];
+        root.visit((node) {
+          visitedKeys.add(node.key);
+        }, stopAfter: (node) => node.key == 'dad');
+
+        expect(visitedKeys, ['root', 'grandpa', 'dad']);
+      });
+    });
+
+    group('with stopBefore', () {
+      test('stops visiting when the callback returns false', () {
+        final visitedKeys = <String>[];
+        root.visit((node) {
+          visitedKeys.add(node.key);
+        }, stopBefore: (node) => node.key == 'dad');
+
+        expect(visitedKeys, ['root', 'grandpa']);
+      });
+    });
+
+    group('with where', () {
+      test('only visits nodes matching the condition', () {
+        final visitedKeys = <String>[];
+        root.visit((node) {
+          visitedKeys.add(node.key);
+        }, where: (node) => node.key.contains('d'));
+
+        expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+      });
+    });
   });
 }

@@ -315,6 +315,44 @@ class Tree<T extends TreeData> {
     return where != null ? result.where(where) : result;
   }
 
+  // ...........................................................................
+  /// Visits all nodes in this tree
+  void visit(
+    void Function(Tree<T> node) visitor, {
+    bool topDown = true,
+    bool Function(Tree<T> node)? where,
+    bool Function(Tree<T> node)? stopAfter,
+    bool Function(Tree<T> node)? stopBefore,
+  }) {
+    final matches = where == null || where(this);
+
+    if (stopBefore?.call(this) == true) {
+      return;
+    }
+
+    if (topDown && matches) {
+      visitor(this);
+    }
+
+    if (stopAfter?.call(this) == true) {
+      return;
+    }
+
+    for (final child in children) {
+      child.visit(
+        visitor,
+        topDown: topDown,
+        where: where,
+        stopAfter: stopAfter,
+        stopBefore: stopBefore,
+      );
+    }
+
+    if (!topDown) {
+      visitor(this);
+    }
+  }
+
   // ######################
   // Private
   // ######################
