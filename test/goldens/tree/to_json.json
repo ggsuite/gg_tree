@@ -7,6 +7,9 @@
     "hiRoot": "Hi from root.",
     "isAncestor": true
   },
+  "_tags": [
+    "family"
+  ],
   "_children": [
     {
       "key": "grandpa",
@@ -17,6 +20,9 @@
         "hiGrandpa": "Hi from grandpa.",
         "isAncestor": false
       },
+      "_tags": [
+        "family"
+      ],
       "_children": [
         {
           "key": "dad",
@@ -35,6 +41,9 @@
               "null": null
             }
           },
+          "_tags": [
+            "family"
+          ],
           "_children": [
             {
               "key": "me",
@@ -53,6 +62,9 @@
                   "null": null
                 }
               },
+              "_tags": [
+                "family"
+              ],
               "_children": [
                 {
                   "key": "child",
@@ -71,6 +83,9 @@
                       "null": null
                     }
                   },
+                  "_tags": [
+                    "family"
+                  ],
                   "_children": [
                     {
                       "key": "grandchild",
@@ -88,7 +103,10 @@
                           "false": false,
                           "null": null
                         }
-                      }
+                      },
+                      "_tags": [
+                        "family"
+                      ]
                     }
                   ]
                 }
@@ -110,7 +128,10 @@
                   "false": false,
                   "null": null
                 }
-              }
+              },
+              "_tags": [
+                "family"
+              ]
             },
             {
               "key": "sister",
@@ -128,7 +149,10 @@
                   "false": false,
                   "null": null
                 }
-              }
+              },
+              "_tags": [
+                "family"
+              ]
             }
           ]
         }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.13] - 2026-02-18
+
+### Added
+
+- Add tags, addTag, removeTag, hasTag
+
 ## [1.0.12] - 2026-02-15
 
 ### Changed
@@ -112,6 +118,7 @@
 
 - Initial implementation
 
+[1.0.13]: https://github.com/ggsuite/gg_tree/compare/1.0.12...1.0.13
 [1.0.12]: https://github.com/ggsuite/gg_tree/compare/1.0.11...1.0.12
 [1.0.11]: https://github.com/ggsuite/gg_tree/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/ggsuite/gg_tree/compare/1.0.9...1.0.10
