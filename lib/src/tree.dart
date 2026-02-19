@@ -295,8 +295,8 @@ class Tree<T extends TreeData> {
   }) => Tree.base(
     key: key ?? this.key,
     parent: parent,
-    data: data ?? this.data,
-    children: children ?? [],
+    data: data ?? this.data.deepCopy() as T,
+    children: children?.map((e) => e.flatCopyWith()).toList() ?? [],
     originalKey: originalKey ?? this.originalKey,
     isValidJsonKey: isValidJsonKey,
     tags: tags ?? this.tags,
@@ -701,7 +701,15 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  Tree<T> _deepCopy(Tree<T> tree) => fromJson(toJson());
+  Tree<T> _deepCopy(Tree<T> tree) {
+    final result = tree.flatCopyWith();
+    final children = <Tree<T>>[];
+    for (final child in tree.children) {
+      children.add(_deepCopy(child));
+    }
+    result.addChildren(children);
+    return result;
+  }
 
   // ...........................................................................
   void _ls(

@@ -14,6 +14,9 @@ abstract class TreeData {
 
   /// Creates tree data from JSON
   TreeData fromJson(Json json);
+
+  /// Creates a deep copy of this tree data
+  TreeData deepCopy();
 }
 
 // .............................................................................
@@ -30,12 +33,17 @@ class ExampleData implements TreeData {
 
   @override
   Json toJson() {
-    return deepCopy(data);
+    return data.deepCopy();
   }
 
   @override
   ExampleData fromJson(Json json) {
     return ExampleData(json);
+  }
+
+  @override
+  TreeData deepCopy() {
+    return ExampleData(data.deepCopy());
   }
 
   /// Convenience method to create from JSON

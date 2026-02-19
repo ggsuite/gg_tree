@@ -36,5 +36,11 @@ void main() {
       final fromJsonFactory = ExampleData.fromJson(json);
       expect(fromJsonFactory.data, exampleData.data);
     });
+
+    test('deepCopy', () {
+      final copy = exampleData.deepCopy() as ExampleData;
+      expect(copy.data, exampleData.data);
+      expect(identical(copy.data, exampleData.data), isFalse);
+    });
   });
 }

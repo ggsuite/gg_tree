@@ -1114,24 +1114,49 @@ void main() {
     });
 
     group('deepCopy', () {
-      test('creates an identical copy of the tree', () {
-        final copy = root.deepCopy();
+      group('creates an identical copy of the tree', () {
+        test('when tree is root', () {
+          final copy = root.deepCopy();
 
-        // Check that the copy is not the same instance
-        expect(copy, isNot(same(root)));
+          // Check that the copy is not the same instance
+          expect(copy, isNot(same(root)));
 
-        // Check that the structure is identical
-        expect(copy.key, root.key);
-        expect(copy.data.toJson(), root.data.toJson());
-        expect(copy.children.length, root.children.length);
+          // Check that the structure is identical
+          expect(copy.key, root.key);
+          expect(copy.data.toJson(), root.data.toJson());
+          expect(copy.children.length, root.children.length);
 
-        final originalChild = root.children.first;
-        final copiedChild = copy.children.first;
+          final originalChild = root.children.first;
+          final copiedChild = copy.children.first;
 
-        expect(copiedChild, isNot(same(originalChild)));
-        expect(copiedChild.key, originalChild.key);
-        expect(copiedChild.data.toJson(), originalChild.data.toJson());
-        expect(copiedChild.parent, same(copy));
+          expect(copiedChild, isNot(same(originalChild)));
+          expect(copiedChild.key, originalChild.key);
+          expect(copiedChild.data.toJson(), originalChild.data.toJson());
+          expect(copiedChild.parent, isNull);
+
+          expect(root.toJson(), copy.toJson());
+        });
+
+        test('when tree is not a root', () {
+          final copy = me.deepCopy();
+
+          // Check that the copy is not the same instance
+          expect(copy, isNot(same(me)));
+
+          // Check that the structure is identical
+          expect(copy.key, me.key);
+          expect(copy.data.toJson(), me.data.toJson());
+          expect(copy.children.length, me.children.length);
+
+          final originalChild = me.children.first;
+          final copiedChild = copy.children.first;
+
+          expect(copiedChild, isNot(same(originalChild)));
+          expect(copiedChild.key, originalChild.key);
+          expect(copiedChild.data.toJson(), originalChild.data.toJson());
+          expect(copiedChild.parent, isNull);
+          expect(me.toJson(), copy.toJson());
+        });
       });
     });
 
@@ -1179,6 +1204,22 @@ void main() {
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
         expect(copy.tags, me.tags);
+      });
+
+      test('with children changed', () {
+        final copy = me.flatCopyWith(children: [child]);
+        expect(copy.parent, isNull);
+        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.key, me.key);
+        expect(copy.isReadOnly, isFalse);
+        expect(copy.originalKey, me.originalKey);
+        expect(copy.tags, me.tags);
+
+        expect(copy.children.length, 1);
+        final copiedChild = copy.children.first;
+        expect(copiedChild, isNot(same(child)));
+        expect(copiedChild.key, child.key);
+        expect(copiedChild.data.toJson(), child.data.toJson());
       });
     });
 

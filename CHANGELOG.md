@@ -6,6 +6,10 @@
 
 - Add flatcopy
 
+### Changed
+
+- Make deepCopy really traverse tree
+
 ## [1.0.14] - 2026-02-18
 
 ### Added
