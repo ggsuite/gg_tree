@@ -1135,6 +1135,53 @@ void main() {
       });
     });
 
+    group('flatCopy', () {
+      test('without params', () {
+        final copy = me.flatCopyWith();
+        expect(copy.parent, isNull);
+        expect(copy.children, isEmpty);
+        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.key, me.key);
+        expect(copy.isReadOnly, isFalse);
+        expect(copy.originalKey, me.originalKey);
+        expect(copy.tags, me.tags);
+      });
+
+      test('with data changed', () {
+        final copy = me.flatCopyWith(data: ExampleData({'new': 'data'}));
+        expect(copy.parent, isNull);
+        expect(copy.children, isEmpty);
+        expect(copy.data.toJson(), {'new': 'data'});
+        expect(copy.key, me.key);
+        expect(copy.isReadOnly, isFalse);
+        expect(copy.originalKey, me.originalKey);
+        expect(copy.tags, me.tags);
+      });
+
+      test('with key changed', () {
+        final copy = me.flatCopyWith(key: 'newKey');
+        expect(copy.parent, isNull);
+        expect(copy.children, isEmpty);
+        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.key, 'newKey');
+        expect(copy.isReadOnly, isFalse);
+        expect(copy.originalKey, me.originalKey);
+        expect(copy.tags, me.tags);
+      });
+
+      test('with isReadOnly true', () {
+        me.isReadOnly = true;
+        final copy = me.flatCopyWith();
+        expect(copy.parent, isNull);
+        expect(copy.children, isEmpty);
+        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.key, me.key);
+        expect(copy.isReadOnly, isFalse);
+        expect(copy.originalKey, me.originalKey);
+        expect(copy.tags, me.tags);
+      });
+    });
+
     group('ls, lsProps', () {
       group('with showDataPaths', () {
         group('true', () {

@@ -265,6 +265,9 @@ class Tree<T extends TreeData> {
     }
   }
 
+  /// Set node readonly
+  set isReadOnly(bool value) => setReadOnly(value);
+
   /// Wether this tree node is readonly
   bool get isReadOnly => _isReadOnly;
 
@@ -278,6 +281,26 @@ class Tree<T extends TreeData> {
   // ...........................................................................
   /// Creates a deep copy of this tree
   Tree<T> deepCopy() => _deepCopy(this);
+
+  // ...........................................................................
+  /// Creates a shallow copy of this tree with optional field overrides.
+  /// Does not copy children
+  Tree<T> flatCopyWith({
+    String? key,
+    Tree<T>? parent,
+    T? data,
+    Iterable<Tree<T>>? children,
+    String? originalKey,
+    Iterable<String>? tags,
+  }) => Tree.base(
+    key: key ?? this.key,
+    parent: parent,
+    data: data ?? this.data,
+    children: children ?? [],
+    originalKey: originalKey ?? this.originalKey,
+    isValidJsonKey: isValidJsonKey,
+    tags: tags ?? this.tags,
+  );
 
   // ...........................................................................
   /// Lists all objects paths of this tree
