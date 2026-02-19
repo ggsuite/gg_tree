@@ -280,7 +280,7 @@ class Tree<T extends TreeData> {
 
   // ...........................................................................
   /// Creates a deep copy of this tree
-  Tree<T> deepCopy() => _deepCopy(this);
+  Tree<T> deepCopy({bool Function(Tree<T>)? where}) => _deepCopy(this, where);
 
   // ...........................................................................
   /// Creates a shallow copy of this tree with optional field overrides.
@@ -701,11 +701,13 @@ class Tree<T extends TreeData> {
   }
 
   // ...........................................................................
-  Tree<T> _deepCopy(Tree<T> tree) {
+  Tree<T> _deepCopy(Tree<T> tree, [bool Function(Tree<T>)? where]) {
     final result = tree.flatCopyWith();
     final children = <Tree<T>>[];
     for (final child in tree.children) {
-      children.add(_deepCopy(child));
+      if (where == null || where(child)) {
+        children.add(_deepCopy(child, where));
+      }
     }
     result.addChildren(children);
     return result;

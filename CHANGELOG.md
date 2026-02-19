@@ -5,6 +5,7 @@
 ### Added
 
 - Add flatcopy
+- Add Tree.deepCopy(where)
 
 ### Changed
 

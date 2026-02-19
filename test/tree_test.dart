@@ -1157,6 +1157,27 @@ void main() {
           expect(copiedChild.parent, isNull);
           expect(me.toJson(), copy.toJson());
         });
+
+        group('with where given', () {
+          test('copies only nodes that satisfy the condition', () {
+            final copy = me.deepCopy(where: (node) => node.key == 'child');
+
+            // Check that the copy is not the same instance
+            expect(copy, isNot(same(me)));
+
+            // Check that only the child node is copied
+            expect(copy.key, me.key);
+            expect(copy.data.toJson(), me.data.toJson());
+            expect(copy.children.length, 1);
+
+            final copiedChild = copy.children.first;
+
+            expect(copiedChild, isNot(same(child)));
+            expect(copiedChild.key, child.key);
+            expect(copiedChild.data.toJson(), child.data.toJson());
+            expect(copiedChild.parent, isNull);
+          });
+        });
       });
     });
 
