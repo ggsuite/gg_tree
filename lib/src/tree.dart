@@ -200,7 +200,10 @@ class Tree<T extends TreeData> {
 
   /// Returns all children to list of children
   void addChildren(Iterable<Tree<T>> children) {
-    _children.addAll(children);
+    for (final child in children) {
+      child.parent = this;
+    }
+
     _makeKeysUnique();
   }
 

@@ -1132,7 +1132,7 @@ void main() {
           expect(copiedChild, isNot(same(originalChild)));
           expect(copiedChild.key, originalChild.key);
           expect(copiedChild.data.toJson(), originalChild.data.toJson());
-          expect(copiedChild.parent, isNull);
+          expect(copiedChild.parent, copy);
 
           expect(root.toJson(), copy.toJson());
         });
@@ -1154,7 +1154,7 @@ void main() {
           expect(copiedChild, isNot(same(originalChild)));
           expect(copiedChild.key, originalChild.key);
           expect(copiedChild.data.toJson(), originalChild.data.toJson());
-          expect(copiedChild.parent, isNull);
+          expect(copiedChild.parent, copy);
           expect(me.toJson(), copy.toJson());
         });
 
@@ -1175,7 +1175,7 @@ void main() {
             expect(copiedChild, isNot(same(child)));
             expect(copiedChild.key, child.key);
             expect(copiedChild.data.toJson(), child.data.toJson());
-            expect(copiedChild.parent, isNull);
+            expect(copiedChild.parent, copy);
           });
         });
       });
