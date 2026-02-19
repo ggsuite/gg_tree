@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.15] - 2026-02-19
 
 ### Added
 
@@ -135,7 +135,7 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.14...HEAD
+[1.0.15]: https://github.com/ggsuite/gg_tree/compare/1.0.14...1.0.15
 [1.0.14]: https://github.com/ggsuite/gg_tree/compare/1.0.13...1.0.14
 [1.0.13]: https://github.com/ggsuite/gg_tree/compare/1.0.12...1.0.13
 [1.0.12]: https://github.com/ggsuite/gg_tree/compare/1.0.11...1.0.12
