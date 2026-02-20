@@ -1011,6 +1011,11 @@ void main() {
         expect(root.get<int>('#num'), 11);
         expect(me.get<int>('/#num'), 11);
       });
+
+      test('writes also non JSON compatible data', () {
+        me.set('#nonJson', DateTime(2024, 1, 1), extend: true);
+        expect(me.get<DateTime>('#nonJson'), DateTime(2024, 1, 1));
+      });
     });
 
     group('setReadOnly', () {
