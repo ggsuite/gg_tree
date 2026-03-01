@@ -14,7 +14,7 @@ class Tree<T extends Json> {
   /// Constructor
   factory Tree({
     required String key,
-    required Tree<T> parent,
+    Tree<T>? parent,
     required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
@@ -30,25 +30,6 @@ class Tree<T extends Json> {
     parse: parse,
     isValidJsonKey: isValidJsonKey,
     tags: tags,
-  );
-
-  // ...........................................................................
-  /// Constructor for a root tree
-  factory Tree.root({
-    required String key,
-    required T data,
-    Iterable<Tree<T>> children = const [],
-    String? originalKey,
-    Iterable<String> tags = const [],
-    P Function<P>(Json)? parse,
-  }) => Tree.base(
-    key: key,
-    parent: null,
-    data: data,
-    children: children,
-    originalKey: originalKey,
-    tags: tags,
-    parse: parse,
   );
 
   // ...........................................................................
@@ -404,7 +385,7 @@ class Tree<T extends Json> {
     Tree<ExampleData> grandchild,
   )
   _exampleNodes({String? key}) {
-    final root = Tree<ExampleData>.root(
+    final root = Tree<ExampleData>(
       key: key ?? 'root',
       data: ExampleData({
         'me': 'root',

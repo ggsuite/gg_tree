@@ -48,7 +48,7 @@ void main() {
       });
     });
 
-    group('Tree(), Tree.root(), Tree.example()', () {
+    group('Tree(), Tree(), Tree.example()', () {
       test('should create an instance', () {
         expect(root, isNotNull);
       });
@@ -120,7 +120,7 @@ void main() {
           expect(grandchild.parent, same(child));
 
           // Act
-          final newRoot = Tree<ExampleData>.root(
+          final newRoot = Tree<ExampleData>(
             key: 'newRoot',
             data: ExampleData.example(),
             children: [child, grandchild],
@@ -207,7 +207,7 @@ void main() {
 
     group('pathSimple', () {
       test('returns a simple path with only /, numbers and letters', () {
-        final parent = Tree<ExampleData>.root(
+        final parent = Tree<ExampleData>(
           key: 'parent123',
           data: ExampleData.example(),
         );
@@ -1454,20 +1454,17 @@ void main() {
       final ev = ExampleData.example();
 
       setUp(() {
-        parent = Tree<ExampleData>.root(
-          key: 'parent',
-          data: ExampleData.example(),
-        );
+        parent = Tree<ExampleData>(key: 'parent', data: ExampleData.example());
 
-        child0 = Tree<ExampleData>.root(key: 'child', data: ev);
-        child1 = Tree<ExampleData>.root(key: 'child', data: ev);
-        child2 = Tree<ExampleData>.root(key: 'child', data: ev);
+        child0 = Tree<ExampleData>(key: 'child', data: ev);
+        child1 = Tree<ExampleData>(key: 'child', data: ev);
+        child2 = Tree<ExampleData>(key: 'child', data: ev);
       });
 
       group('auto correct when nodes have not unique names', () {
         group('when nodes are provided via', () {
           test('constructor', () {
-            parent = Tree<ExampleData>.root(
+            parent = Tree<ExampleData>(
               key: 'name',
               data: ev,
               children: [child0, child1, child2],
@@ -1505,9 +1502,9 @@ void main() {
         });
 
         test('sibling nodes with same name are renamed', () {
-          final parent = Tree<ExampleData>.root(key: 'parent', data: ev);
-          final child1 = Tree<ExampleData>.root(key: 'child', data: ev);
-          final child2 = Tree<ExampleData>.root(key: 'child', data: ev);
+          final parent = Tree<ExampleData>(key: 'parent', data: ev);
+          final child1 = Tree<ExampleData>(key: 'child', data: ev);
+          final child2 = Tree<ExampleData>(key: 'child', data: ev);
 
           parent.addChildren([child1, child2]);
 
@@ -1516,10 +1513,10 @@ void main() {
         });
 
         test('multiple sibling nodes with same name are renamed', () {
-          final parent = Tree<ExampleData>.root(key: 'parent', data: ev);
-          final child1 = Tree<ExampleData>.root(key: 'child', data: ev);
-          final child2 = Tree<ExampleData>.root(key: 'child', data: ev);
-          final child3 = Tree<ExampleData>.root(key: 'child', data: ev);
+          final parent = Tree<ExampleData>(key: 'parent', data: ev);
+          final child1 = Tree<ExampleData>(key: 'child', data: ev);
+          final child2 = Tree<ExampleData>(key: 'child', data: ev);
+          final child3 = Tree<ExampleData>(key: 'child', data: ev);
 
           parent.addChildren([child1, child2, child3]);
 
@@ -1578,16 +1575,16 @@ void main() {
       });
 
       test('makes keys unique among siblings when setting key', () {
-        final parent = Tree<ExampleData>.root(
+        final parent = Tree<ExampleData>(
           key: 'parent',
           data: ExampleData.example(),
         );
 
-        final child1 = Tree<ExampleData>.root(
+        final child1 = Tree<ExampleData>(
           key: 'child',
           data: ExampleData.example(),
         );
-        final child2 = Tree<ExampleData>.root(
+        final child2 = Tree<ExampleData>(
           key: 'child',
           data: ExampleData.example(),
         );
@@ -1740,7 +1737,7 @@ void main() {
 
     group('parsed', () {
       test('works when a parse function is given', () {
-        final tree = Tree<Json>.root(
+        final tree = Tree<Json>(
           key: 'root',
           data: {'value': 42, 'key': 'hello'},
           parse: <P>(json) => TestData.fromJson(json) as P,
@@ -1752,7 +1749,7 @@ void main() {
       });
 
       test('uses parent parse method if current has no', () {
-        final parent = Tree<Json>.root(
+        final parent = Tree<Json>(
           key: 'parent',
           data: {'value': 42, 'key': 'hello'},
           parse: <P>(json) => TestData.fromJson(json) as P,
@@ -1772,7 +1769,7 @@ void main() {
       test('throws when no parse function is given', () {
         var message = <String>[];
         try {
-          final tree = Tree<Json>.root(
+          final tree = Tree<Json>(
             key: 'root',
             data: {'value': 42, 'key': 'hello'}, // no parse method
           );
@@ -1788,7 +1785,7 @@ void main() {
       test('throws when an parse function is given but it throws', () {
         var message = <String>[];
         try {
-          final tree = Tree<Json>.root(
+          final tree = Tree<Json>(
             key: 'root',
             data: {'value': 42, 'key': 'hello'},
             parse: <P>(json) => throw Exception('Parse error'),
