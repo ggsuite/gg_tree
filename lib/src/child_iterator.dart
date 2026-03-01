@@ -4,10 +4,11 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
 
 /// Determines if a layout needs a structural shelf.
-class ChildIterator<T extends TreeData> {
+class ChildIterator<T extends Json> {
   // ...........................................................................
   /// Returns the class from a slot tree
   factory ChildIterator({required Tree<T> tree, required int i}) {

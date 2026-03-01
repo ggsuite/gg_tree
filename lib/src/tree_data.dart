@@ -7,46 +7,14 @@
 import 'package:gg_json/gg_json.dart';
 
 // .............................................................................
-/// Interface for all tree data
-abstract class TreeData {
-  /// Converts the tree data to JSON
-  Json toJson();
-
-  /// Creates tree data from JSON
-  TreeData fromJson(Json json);
-
-  /// Creates a deep copy of this tree data
-  TreeData deepCopy();
-}
-
-// .............................................................................
 /// Example implementation of [TreeData]
-class ExampleData implements TreeData {
-  /// Constructor
-  ExampleData(this.data);
+extension type ExampleData(Json data) implements Json {
+  /// Get key
+  set key(String value) => data['key'] = value;
 
-  /// Example instance for test purposes
-  factory ExampleData.example() => ExampleData(exampleJson);
+  /// Set key
+  String get key => data['key'] as String? ?? '';
 
-  /// The example data
-  final Json data;
-
-  @override
-  Json toJson() {
-    return data.deepCopy();
-  }
-
-  @override
-  ExampleData fromJson(Json json) {
-    return ExampleData(json);
-  }
-
-  @override
-  TreeData deepCopy() {
-    return ExampleData(data.deepCopy());
-  }
-
-  /// Convenience method to create from JSON
-  factory ExampleData.fromJson(Json json) =>
-      ExampleData.example().fromJson(json);
+  /// Returns an example object
+  factory ExampleData.example() => ExampleData(exampleJson.deepCopy());
 }

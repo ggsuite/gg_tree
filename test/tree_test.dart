@@ -5,9 +5,27 @@
 // found in the LICENSE file in the root of this package.
 
 import 'package:gg_golden/gg_golden.dart';
+import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
 import 'package:test/test.dart';
 
+// .............................................................................
+class TestData {
+  final String key;
+  final int value;
+
+  TestData(this.key, this.value);
+
+  factory TestData.fromJson(Json json) {
+    return TestData(json['key'] as String, json['value'] as int);
+  }
+
+  Json toJson() {
+    return {'key': key, 'value': value};
+  }
+}
+
+// .............................................................................
 void main() {
   group('Tree', () {
     late Tree<ExampleData> root;
@@ -125,12 +143,12 @@ void main() {
 
     group('data', () {
       test('returns the value', () {
-        expect(root.data.toJson(), {
+        expect(root.data, {
           'me': 'root',
           'hiRoot': 'Hi from root.',
           'isAncestor': true,
         });
-        expect(child.data.toJson(), {
+        expect(child.data, {
           'me': 'child',
           'hiChild': 'Hi from child.',
           'isAncestor': false,
@@ -143,7 +161,7 @@ void main() {
             'null': null,
           },
         });
-        expect(grandchild.data.toJson(), {
+        expect(grandchild.data, {
           'me': 'grandchild',
           'hiGrandchild': 'Hi from grandchild.',
           'isAncestor': false,
@@ -1128,7 +1146,7 @@ void main() {
 
           // Check that the structure is identical
           expect(copy.key, root.key);
-          expect(copy.data.toJson(), root.data.toJson());
+          expect(copy.data, root.data);
           expect(copy.children.length, root.children.length);
 
           final originalChild = root.children.first;
@@ -1136,7 +1154,7 @@ void main() {
 
           expect(copiedChild, isNot(same(originalChild)));
           expect(copiedChild.key, originalChild.key);
-          expect(copiedChild.data.toJson(), originalChild.data.toJson());
+          expect(copiedChild.data, originalChild.data);
           expect(copiedChild.parent, copy);
 
           expect(root.toJson(), copy.toJson());
@@ -1150,7 +1168,7 @@ void main() {
 
           // Check that the structure is identical
           expect(copy.key, me.key);
-          expect(copy.data.toJson(), me.data.toJson());
+          expect(copy.data, me.data);
           expect(copy.children.length, me.children.length);
 
           final originalChild = me.children.first;
@@ -1158,7 +1176,7 @@ void main() {
 
           expect(copiedChild, isNot(same(originalChild)));
           expect(copiedChild.key, originalChild.key);
-          expect(copiedChild.data.toJson(), originalChild.data.toJson());
+          expect(copiedChild.data, originalChild.data);
           expect(copiedChild.parent, copy);
           expect(me.toJson(), copy.toJson());
         });
@@ -1172,14 +1190,14 @@ void main() {
 
             // Check that only the child node is copied
             expect(copy.key, me.key);
-            expect(copy.data.toJson(), me.data.toJson());
+            expect(copy.data, me.data);
             expect(copy.children.length, 1);
 
             final copiedChild = copy.children.first;
 
             expect(copiedChild, isNot(same(child)));
             expect(copiedChild.key, child.key);
-            expect(copiedChild.data.toJson(), child.data.toJson());
+            expect(copiedChild.data, child.data);
             expect(copiedChild.parent, copy);
           });
         });
@@ -1191,7 +1209,7 @@ void main() {
         final copy = me.flatCopyWith();
         expect(copy.parent, isNull);
         expect(copy.children, isEmpty);
-        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.data, me.data);
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
@@ -1202,7 +1220,7 @@ void main() {
         final copy = me.flatCopyWith(data: ExampleData({'new': 'data'}));
         expect(copy.parent, isNull);
         expect(copy.children, isEmpty);
-        expect(copy.data.toJson(), {'new': 'data'});
+        expect(copy.data, {'new': 'data'});
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
@@ -1213,7 +1231,7 @@ void main() {
         final copy = me.flatCopyWith(key: 'newKey');
         expect(copy.parent, isNull);
         expect(copy.children, isEmpty);
-        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.data, me.data);
         expect(copy.key, 'newKey');
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
@@ -1225,7 +1243,7 @@ void main() {
         final copy = me.flatCopyWith();
         expect(copy.parent, isNull);
         expect(copy.children, isEmpty);
-        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.data, me.data);
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
@@ -1235,7 +1253,7 @@ void main() {
       test('with children changed', () {
         final copy = me.flatCopyWith(children: [child]);
         expect(copy.parent, isNull);
-        expect(copy.data.toJson(), me.data.toJson());
+        expect(copy.data, me.data);
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
@@ -1245,7 +1263,7 @@ void main() {
         final copiedChild = copy.children.first;
         expect(copiedChild, isNot(same(child)));
         expect(copiedChild.key, child.key);
-        expect(copiedChild.data.toJson(), child.data.toJson());
+        expect(copiedChild.data, child.data);
       });
     });
 
@@ -1596,7 +1614,7 @@ void main() {
       test('allows to set the data', () {
         me.data = ExampleData({'newKey': 'newValue'});
 
-        expect(me.data.toJson(), {'newKey': 'newValue'});
+        expect(me.data, {'newKey': 'newValue'});
       });
 
       test('throws when readonly is set', () {
@@ -1717,6 +1735,74 @@ void main() {
         }, where: (node) => node.key.contains('d'));
 
         expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+      });
+    });
+
+    group('parsed', () {
+      test('works when a parse function is given', () {
+        final tree = Tree<Json>.root(
+          key: 'root',
+          data: {'value': 42, 'key': 'hello'},
+          parse: <P>(json) => TestData.fromJson(json) as P,
+        );
+
+        final parsed = tree.parsed<TestData>();
+        expect(parsed.value, 42);
+        expect(parsed.key, 'hello');
+      });
+
+      test('uses parent parse method if current has no', () {
+        final parent = Tree<Json>.root(
+          key: 'parent',
+          data: {'value': 42, 'key': 'hello'},
+          parse: <P>(json) => TestData.fromJson(json) as P,
+        );
+
+        final child = Tree<Json>(
+          key: 'child',
+          data: {'value': 43, 'key': 'world'}, // no parse method
+          parent: parent,
+        );
+
+        final parsed = child.parsed<TestData>();
+        expect(parsed.value, 43);
+        expect(parsed.key, 'world');
+      });
+
+      test('throws when no parse function is given', () {
+        var message = <String>[];
+        try {
+          final tree = Tree<Json>.root(
+            key: 'root',
+            data: {'value': 42, 'key': 'hello'}, // no parse method
+          );
+
+          tree.parsed<TestData>();
+        } catch (e) {
+          message = (e as dynamic).message.toString().trim().split('\n');
+        }
+
+        expect(message, ['No parse function provided.']);
+      });
+
+      test('throws when an parse function is given but it throws', () {
+        var message = <String>[];
+        try {
+          final tree = Tree<Json>.root(
+            key: 'root',
+            data: {'value': 42, 'key': 'hello'},
+            parse: <P>(json) => throw Exception('Parse error'),
+          );
+
+          tree.parsed<TestData>();
+        } catch (e) {
+          message = (e as dynamic).message.toString().trim().split('\n');
+        }
+
+        expect(message, [
+          'Failed to parse data of node "root" to type TestData:',
+          'Exception: Parse error',
+        ]);
       });
     });
   });
