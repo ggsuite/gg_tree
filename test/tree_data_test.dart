@@ -26,21 +26,16 @@ void main() {
       expect(exampleData.data, exampleJson);
     });
 
-    test('toJson, fromJson', () {
-      final json = exampleData.toJson();
-      expect(json, exampleJson);
-
-      final fromJson = exampleData.fromJson(json);
-      expect(fromJson.data, exampleData.data);
-
-      final fromJsonFactory = ExampleData.fromJson(json);
-      expect(fromJsonFactory.data, exampleData.data);
-    });
-
     test('deepCopy', () {
       final copy = exampleData.deepCopy() as ExampleData;
       expect(copy.data, exampleData.data);
       expect(identical(copy.data, exampleData.data), isFalse);
+    });
+
+    test('key', () {
+      expect(exampleData.key, '');
+      exampleData.key = 'new value';
+      expect(exampleData.key, 'new value');
     });
   });
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Make Tree universally process Json
+- BREAKING CHANGE: Remove Tree.root constructor.
+
 ## [1.0.16] - 2026-02-19
 
 ### Fixed
@@ -141,6 +148,7 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/1.0.16...HEAD
 [1.0.16]: https://github.com/ggsuite/gg_tree/compare/1.0.15...1.0.16
 [1.0.15]: https://github.com/ggsuite/gg_tree/compare/1.0.14...1.0.15
 [1.0.14]: https://github.com/ggsuite/gg_tree/compare/1.0.13...1.0.14
