@@ -11,26 +11,27 @@ const _isValidJsonKey = isValidJsonKey;
 
 /// A tree of composition items reflecting the generator hierarchy
 class Tree<T extends Json> {
-  /// Constructor
-  factory Tree({
+  // ...........................................................................
+  /// The base constructor used by the factories
+  Tree({
     required String key,
     Tree<T>? parent,
     required T data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
-    bool Function(String key) isValidJsonKey = _isValidJsonKey,
+    this.isValidJsonKey = _isValidJsonKey,
     Iterable<String> tags = const [],
     P Function<P>(Json)? parse,
-  }) => Tree._base(
-    key: key,
-    parent: parent,
-    data: data,
-    children: children,
-    originalKey: originalKey,
-    parse: parse,
-    isValidJsonKey: isValidJsonKey,
-    tags: tags,
-  );
+  }) : originalKey = originalKey ?? key,
+       _key = key,
+       _data = data,
+       _children = [...children],
+       _parent = parent,
+       _tags = {...tags},
+       _parse = parse {
+    _init(parent);
+    _makeKeysUnique();
+  }
 
   /// Example instance for test purposes
   static Tree<ExampleData> example({String? key}) =>
@@ -260,7 +261,7 @@ class Tree<T extends Json> {
     Iterable<Tree<T>>? children,
     String? originalKey,
     Iterable<String>? tags,
-  }) => Tree._base(
+  }) => Tree(
     key: key ?? this.key,
     parent: parent,
     data: data ?? this.data.deepCopy() as T,
@@ -351,28 +352,6 @@ class Tree<T extends Json> {
   final Set<String> _tags;
 
   String _key;
-
-  // ...........................................................................
-  /// The base constructor used by the factories
-  Tree._base({
-    required String key,
-    required Tree<T>? parent,
-    required T data,
-    Iterable<Tree<T>> children = const [],
-    required String? originalKey,
-    this.isValidJsonKey = _isValidJsonKey,
-    Iterable<String> tags = const [],
-    P Function<P>(Json)? parse,
-  }) : originalKey = originalKey ?? key,
-       _key = key,
-       _data = data,
-       _children = [...children],
-       _parent = parent,
-       _tags = {...tags},
-       _parse = parse {
-    _init(parent);
-    _makeKeysUnique();
-  }
 
   static (
     Tree<ExampleData> root,
@@ -598,7 +577,7 @@ class Tree<T extends Json> {
       }
     }
 
-    return Tree._base(
+    return Tree(
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,

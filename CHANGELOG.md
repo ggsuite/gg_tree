@@ -6,6 +6,7 @@
 
 - Make Tree universally process Json
 - BREAKING CHANGE: Remove Tree.root constructor.
+- Refactor Tree constructors
 
 ## [1.0.16] - 2026-02-19
 
