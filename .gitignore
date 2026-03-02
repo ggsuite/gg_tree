@@ -13,3 +13,5 @@ build
 .DS_Store
 .gg_localize*
 .kidney_status
+.gg
+!.gg/.gg.json

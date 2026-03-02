@@ -10,59 +10,25 @@ import 'package:gg_tree/gg_tree.dart';
 const _isValidJsonKey = isValidJsonKey;
 
 /// A tree of composition items reflecting the generator hierarchy
-class Tree<T extends TreeData> {
-  /// Constructor
-  factory Tree({
-    required String key,
-    required Tree<T> parent,
-    required T data,
-    Iterable<Tree<T>> children = const [],
-    String? originalKey,
-    bool Function(String key) isValidJsonKey = _isValidJsonKey,
-    Iterable<String> tags = const [],
-  }) => Tree.base(
-    key: key,
-    parent: parent,
-    data: data,
-    children: children,
-    originalKey: originalKey,
-    isValidJsonKey: isValidJsonKey,
-    tags: tags,
-  );
-
-  // ...........................................................................
-  /// Constructor for a root tree
-  factory Tree.root({
-    required String key,
-    required T data,
-    Iterable<Tree<T>> children = const [],
-    String? originalKey,
-    Iterable<String> tags = const [],
-  }) => Tree.base(
-    key: key,
-    parent: null,
-    data: data,
-    children: children,
-    originalKey: originalKey,
-    tags: tags,
-  );
-
+class Tree<T extends Json> {
   // ...........................................................................
   /// The base constructor used by the factories
-  Tree.base({
+  Tree({
     required String key,
-    required Tree<T>? parent,
+    Tree<T>? parent,
     required T data,
     Iterable<Tree<T>> children = const [],
-    required String? originalKey,
+    String? originalKey,
     this.isValidJsonKey = _isValidJsonKey,
     Iterable<String> tags = const [],
+    P Function<P>(Json)? parse,
   }) : originalKey = originalKey ?? key,
        _key = key,
        _data = data,
        _children = [...children],
        _parent = parent,
-       _tags = {...tags} {
+       _tags = {...tags},
+       _parse = parse {
     _init(parent);
     _makeKeysUnique();
   }
@@ -116,14 +82,14 @@ class Tree<T extends TreeData> {
   /// Returns the value of this node
   T get data => _data;
 
+  /// Parses the json data
+  P parsed<P>() => _parsed();
+
   /// Sets the data
   set data(T value) {
     _throwWhenReadonly();
     _data = value;
   }
-
-  /// Returns the value as JSON
-  Json get dataJson => _data.toJson();
 
   // ...........................................................................
   /// Adds a tag to this node
@@ -295,7 +261,7 @@ class Tree<T extends TreeData> {
     Iterable<Tree<T>>? children,
     String? originalKey,
     Iterable<String>? tags,
-  }) => Tree.base(
+  }) => Tree(
     key: key ?? this.key,
     parent: parent,
     data: data ?? this.data.deepCopy() as T,
@@ -398,7 +364,7 @@ class Tree<T extends TreeData> {
     Tree<ExampleData> grandchild,
   )
   _exampleNodes({String? key}) {
-    final root = Tree<ExampleData>.root(
+    final root = Tree<ExampleData>(
       key: key ?? 'root',
       data: ExampleData({
         'me': 'root',
@@ -494,6 +460,8 @@ class Tree<T extends TreeData> {
     return (root, grandpa, dad, me, brother, sister, child, grandchild);
   }
 
+  final P Function<P>(Json)? _parse;
+
   // ...........................................................................
   final List<Tree<T>> _children;
 
@@ -573,7 +541,7 @@ class Tree<T extends TreeData> {
       return json;
     }
 
-    json['_data'] = tree.data.toJson();
+    json['_data'] = tree.data.deepCopy();
 
     if (tags.isNotEmpty) {
       json['_tags'] = tags.toList();
@@ -609,11 +577,11 @@ class Tree<T extends TreeData> {
       }
     }
 
-    return Tree.base(
+    return Tree(
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,
-      data: _data.fromJson(json['_data'] as Json) as T,
+      data: json['_data'] as T,
       children: ch,
       tags: tags,
     );
@@ -652,7 +620,7 @@ class Tree<T extends TreeData> {
 
       final value = readTreeInfo
           ? dataNode._treeInfo<V>(dataKey)
-          : dataNode.dataJson.getOrNull<V>(q.data);
+          : dataNode._data.getOrNull<V>(q.data);
 
       if (value != null) {
         return value;
@@ -682,8 +650,7 @@ class Tree<T extends TreeData> {
   void _set<V>(String query, V value, {bool extend = false}) {
     final q = TreeQuery(query);
     final node = findNode(q.node);
-    final newJson = node.dataJson.set<V>(q.data, value, extend: extend);
-    node._data = node._data.fromJson(newJson) as T;
+    node.data.set<V>(q.data, value, extend: extend);
   }
 
   // ...........................................................................
@@ -752,9 +719,7 @@ class Tree<T extends TreeData> {
     required bool addTreeProps,
   }) {
     if (showDataPaths) {
-      final dataPaths = addTreeProps
-          ? _treeProps(this, true).ls()
-          : dataJson.ls();
+      final dataPaths = addTreeProps ? _treeProps(this, true).ls() : _data.ls();
       for (var dataPath in dataPaths) {
         final node = addTreeProps ? 'node/' : '';
         paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
@@ -1116,5 +1081,28 @@ class Tree<T extends TreeData> {
   V? _treeInfo<V>(String dataKey) {
     final dataJson = _toJson(this, onlyOwn: true, addComputed: true);
     return dataJson.getOrNull<V>(dataKey);
+  }
+
+  // ...........................................................................
+  P _parsed<P>() {
+    Tree? current = this;
+    P Function(Json)? parse = _parse;
+
+    while (current != null && parse == null) {
+      current = current.parent;
+      parse = current?._parse;
+    }
+
+    if (parse == null) {
+      throw Exception('No parse function provided.');
+    }
+
+    try {
+      return parse(_data);
+    } catch (e) {
+      throw Exception(
+        ['Failed to parse data of node "$key" to type $P:', '$e'].join('\n'),
+      );
+    }
   }
 }
