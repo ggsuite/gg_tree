@@ -1036,6 +1036,37 @@ void main() {
       });
     });
 
+    group('remove(key)', () {
+      group('removes data from the tree', () {
+        test('complete element from parent', () {
+          me.set('../#', {'hello': 'world'});
+          expect(dad.data.data, {'hello': 'world'});
+          me.remove('../#');
+          expect(dad.data.data, Json());
+        });
+
+        test('complete element from self', () {
+          me.set('./#', {'new': 'object'});
+          expect(me.data.data, {'new': 'object'});
+          me.remove('./#');
+          expect(me.data.data, Json());
+        });
+
+        test('single property', () {
+          me.set('#prop/child0', 'hi', extend: true);
+          me.set('#prop/child1', 'ho', extend: true);
+          expect(me.get<Json>('#prop'), {'child0': 'hi', 'child1': 'ho'});
+          me.remove('./#prop/child0');
+          expect(me.get<Json>('#prop'), {'child1': 'ho'});
+        });
+      });
+
+      test('writes also non JSON compatible data', () {
+        me.set('#nonJson', DateTime(2024, 1, 1), extend: true);
+        expect(me.get<DateTime>('#nonJson'), DateTime(2024, 1, 1));
+      });
+    });
+
     group('setReadOnly', () {
       group('with recursive = true', () {
         test('sets all children to readonly', () {

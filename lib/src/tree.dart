@@ -223,6 +223,12 @@ class Tree<T extends Json> {
     _set<V>(key, value, extend: extend);
   }
 
+  /// Remove a value from this node
+  void remove(String key) {
+    _throwWhenReadonly();
+    _remove(key);
+  }
+
   // ...........................................................................
   /// Make this node read only
   void setReadOnly(bool readOnly, {bool recursive = false}) {
@@ -651,6 +657,18 @@ class Tree<T extends Json> {
     final q = TreeQuery(query);
     final node = findNode(q.node);
     node.data.set<V>(q.data, value, extend: extend);
+  }
+
+  // ...........................................................................
+  void _remove(String query) {
+    final q = TreeQuery(query);
+
+    final node = findNode(q.node);
+    if (q.data.isEmpty) {
+      node.data.clear();
+    }
+
+    node.data.removeValue(q.data);
   }
 
   // ...........................................................................
