@@ -1301,102 +1301,127 @@ void main() {
     group('ls, lsProps', () {
       group('with showDataPaths', () {
         group('true', () {
-          group('return all paths of the tree', () {
-            test('for node root', () async {
-              final ls = root.lsProps();
-              await writeGolden('root_ls.json', ls);
+          group('withProps false', () {
+            group('return all paths of the tree', () {
+              test('for node root', () async {
+                final ls = root.lsProps();
+                await writeGolden('root_ls.json', ls);
 
-              expect(
-                ls,
-                containsAll([
+                expect(
+                  ls,
+                  containsAll([
+                    '.#node/path',
+                    '.#node/pathSimple',
+                    '.#node/isRoot',
+                    './grandpa#.',
+                    './grandpa#me',
+                    './grandpa#hiGrandpa',
+                    './grandpa#isAncestor',
+                    './grandpa#node/.',
+                    './grandpa#node/key',
+                    './grandpa#node/originalKey',
+                    './grandpa#node/isReadOnly',
+                    './grandpa#node/childCount',
+                  ]),
+                );
+              });
+
+              test('for node me', () async {
+                final meLs = me.lsProps();
+                await writeGolden('me_ls.json', meLs);
+
+                expect(meLs, [
+                  '.#.',
+                  '.#me',
+                  '.#hiMe',
+                  '.#isAncestor',
+                  '.#nums',
+                  '.#nums/string',
+                  '.#nums/int',
+                  '.#nums/double',
+                  '.#nums/true',
+                  '.#nums/false',
+                  '.#nums/null',
+                  '.#node/.',
+                  '.#node/key',
+                  '.#node/originalKey',
+                  '.#node/isReadOnly',
+                  '.#node/childCount',
+                  '.#node/siblingsCount',
+                  '.#node/index',
+                  '.#node/reverseIndex',
                   '.#node/path',
                   '.#node/pathSimple',
                   '.#node/isRoot',
-                  './grandpa#.',
-                  './grandpa#me',
-                  './grandpa#hiGrandpa',
-                  './grandpa#isAncestor',
-                  './grandpa#node/.',
-                  './grandpa#node/key',
-                  './grandpa#node/originalKey',
-                  './grandpa#node/isReadOnly',
-                  './grandpa#node/childCount',
-                ]),
-              );
+                  './child#.',
+                  './child#me',
+                  './child#hiChild',
+                  './child#isAncestor',
+                  './child#nums',
+                  './child#nums/string',
+                  './child#nums/int',
+                  './child#nums/double',
+                  './child#nums/true',
+                  './child#nums/false',
+                  './child#nums/null',
+                  './child#node/.',
+                  './child#node/key',
+                  './child#node/originalKey',
+                  './child#node/isReadOnly',
+                  './child#node/childCount',
+                  './child#node/siblingsCount',
+                  './child#node/index',
+                  './child#node/reverseIndex',
+                  './child#node/path',
+                  './child#node/pathSimple',
+                  './child#node/isRoot',
+                  './child/grandchild#.',
+                  './child/grandchild#me',
+                  './child/grandchild#hiGrandchild',
+                  './child/grandchild#isAncestor',
+                  './child/grandchild#nums',
+                  './child/grandchild#nums/string',
+                  './child/grandchild#nums/int',
+                  './child/grandchild#nums/double',
+                  './child/grandchild#nums/true',
+                  './child/grandchild#nums/false',
+                  './child/grandchild#nums/null',
+                  './child/grandchild#node/.',
+                  './child/grandchild#node/key',
+                  './child/grandchild#node/originalKey',
+                  './child/grandchild#node/isReadOnly',
+                  './child/grandchild#node/childCount',
+                  './child/grandchild#node/siblingsCount',
+                  './child/grandchild#node/index',
+                  './child/grandchild#node/reverseIndex',
+                  './child/grandchild#node/path',
+                  './child/grandchild#node/pathSimple',
+                  './child/grandchild#node/isRoot',
+                ]);
+              });
             });
+          });
 
-            test('for node me', () async {
-              final meLs = me.lsProps();
-              await writeGolden('me_ls.json', meLs);
+          group('withProps true', () {
+            group('adds also values of the properties', () {
+              test('for node root', () async {
+                final ls = root.lsProps(withValues: true);
+                await writeGolden('root_ls_with_props.json', ls);
 
-              expect(meLs, [
-                '.#.',
-                '.#me',
-                '.#hiMe',
-                '.#isAncestor',
-                '.#nums',
-                '.#nums/string',
-                '.#nums/int',
-                '.#nums/double',
-                '.#nums/true',
-                '.#nums/false',
-                '.#nums/null',
-                '.#node/.',
-                '.#node/key',
-                '.#node/originalKey',
-                '.#node/isReadOnly',
-                '.#node/childCount',
-                '.#node/siblingsCount',
-                '.#node/index',
-                '.#node/reverseIndex',
-                '.#node/path',
-                '.#node/pathSimple',
-                '.#node/isRoot',
-                './child#.',
-                './child#me',
-                './child#hiChild',
-                './child#isAncestor',
-                './child#nums',
-                './child#nums/string',
-                './child#nums/int',
-                './child#nums/double',
-                './child#nums/true',
-                './child#nums/false',
-                './child#nums/null',
-                './child#node/.',
-                './child#node/key',
-                './child#node/originalKey',
-                './child#node/isReadOnly',
-                './child#node/childCount',
-                './child#node/siblingsCount',
-                './child#node/index',
-                './child#node/reverseIndex',
-                './child#node/path',
-                './child#node/pathSimple',
-                './child#node/isRoot',
-                './child/grandchild#.',
-                './child/grandchild#me',
-                './child/grandchild#hiGrandchild',
-                './child/grandchild#isAncestor',
-                './child/grandchild#nums',
-                './child/grandchild#nums/string',
-                './child/grandchild#nums/int',
-                './child/grandchild#nums/double',
-                './child/grandchild#nums/true',
-                './child/grandchild#nums/false',
-                './child/grandchild#nums/null',
-                './child/grandchild#node/.',
-                './child/grandchild#node/key',
-                './child/grandchild#node/originalKey',
-                './child/grandchild#node/isReadOnly',
-                './child/grandchild#node/childCount',
-                './child/grandchild#node/siblingsCount',
-                './child/grandchild#node/index',
-                './child/grandchild#node/reverseIndex',
-                './child/grandchild#node/path',
-                './child/grandchild#node/pathSimple',
-                './child/grandchild#node/isRoot',
-              ]);
+                expect(
+                  ls.where((element) => element.contains('Hi ')),
+                  containsAll([
+                    '.#hiRoot = Hi from root.',
+                    './grandpa#hiGrandpa = Hi from grandpa.',
+                    './grandpa/dad#hiDad = Hi from dad.',
+                    './grandpa/dad/me#hiMe = Hi from me.',
+                    './grandpa/dad/me/child#hiChild = Hi from child.',
+                    './grandpa/dad/me/child/grandchild#hiGrandchild = Hi from grandchild.',
+                    './grandpa/dad/brother#hiBrother = Hi from brother.',
+                    './grandpa/dad/sister#hiSister = Hi from sister.',
+                  ]),
+                );
+              });
             });
           });
         });

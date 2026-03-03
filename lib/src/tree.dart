@@ -283,18 +283,21 @@ class Tree<T extends Json> {
     String prefix = '',
     bool Function(Tree<T> node)? where,
     bool showProps = false,
+    bool withValues = false,
   }) {
     final paths = <String>[];
 
-    _ls(paths, '.', where: where, showProps: showProps);
+    _ls(paths, '.', where: where, showProps: showProps, withValues: withValues);
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
   }
 
   /// Shows all nodes together with properties
   List<String> lsProps({
     String prefix = '',
+    bool withValues = false,
     bool Function(Tree<T> node)? where,
-  }) => ls(prefix: prefix, where: where, showProps: true);
+  }) =>
+      ls(prefix: prefix, where: where, showProps: true, withValues: withValues);
 
   /// List all nodes
   Iterable<Tree<T>> lsNodes() {
@@ -432,7 +435,7 @@ class Tree<T extends Json> {
       key: 'sister',
       data: ExampleData({
         'me': 'sister',
-        'hiBrother': 'Hi from sister.',
+        'hiSister': 'Hi from sister.',
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
@@ -707,6 +710,7 @@ class Tree<T extends Json> {
     String ownPath, {
     bool Function(Tree<T> node)? where,
     bool showProps = true,
+    required bool withValues,
   }) {
     if (where == null || where(this)) {
       if (!showProps) {
@@ -714,10 +718,22 @@ class Tree<T extends Json> {
       }
 
       // Write data properties
-      _addProps(showProps, paths, ownPath, addTreeProps: false);
+      _addProps(
+        showProps,
+        paths,
+        ownPath,
+        addTreeProps: false,
+        withValues: withValues,
+      );
 
       // Write tree properties
-      _addProps(showProps, paths, ownPath, addTreeProps: true);
+      _addProps(
+        showProps,
+        paths,
+        ownPath,
+        addTreeProps: true,
+        withValues: withValues,
+      );
     }
 
     for (final child in children) {
@@ -726,6 +742,7 @@ class Tree<T extends Json> {
         '$ownPath/${child.key}',
         where: where,
         showProps: showProps,
+        withValues: withValues,
       );
     }
   }
@@ -735,12 +752,20 @@ class Tree<T extends Json> {
     List<String> paths,
     String ownPath, {
     required bool addTreeProps,
+    required bool withValues,
   }) {
     if (showDataPaths) {
-      final dataPaths = addTreeProps ? _treeProps(this, true).ls() : _data.ls();
+      final data = addTreeProps ? _treeProps(this, true) : _data;
+      final dataPaths = data.ls();
       for (var dataPath in dataPaths) {
         final node = addTreeProps ? 'node/' : '';
-        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
+        final v = withValues ? data.getOrNull<dynamic>(dataPath) : null;
+        var prop = '';
+        if (v is String || v is num || v is bool) {
+          prop = ' = $v';
+        }
+
+        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}$prop');
       }
     }
   }

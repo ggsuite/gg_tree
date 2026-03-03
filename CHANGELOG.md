@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Allow to print the values of lsProps()
+
 ## [2.0.1] - 2026-03-03
 
 ### Added
@@ -155,6 +161,7 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/2.0.1...HEAD
 [2.0.1]: https://github.com/ggsuite/gg_tree/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/ggsuite/gg_tree/compare/1.0.16...2.0.0
 [1.0.16]: https://github.com/ggsuite/gg_tree/compare/1.0.15...1.0.16

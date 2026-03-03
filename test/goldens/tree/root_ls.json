@@ -141,7 +141,7 @@
   "./grandpa/dad/brother#node/isRoot",
   "./grandpa/dad/sister#.",
   "./grandpa/dad/sister#me",
-  "./grandpa/dad/sister#hiBrother",
+  "./grandpa/dad/sister#hiSister",
   "./grandpa/dad/sister#isAncestor",
   "./grandpa/dad/sister#nums",
   "./grandpa/dad/sister#nums/string",

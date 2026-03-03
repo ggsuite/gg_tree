@@ -139,7 +139,7 @@
               "isReadOnly": false,
               "_data": {
                 "me": "sister",
-                "hiBrother": "Hi from sister.",
+                "hiSister": "Hi from sister.",
                 "isAncestor": false,
                 "nums": {
                   "string": "Hello, World",
