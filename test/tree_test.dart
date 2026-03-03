@@ -1428,8 +1428,8 @@ void main() {
               test('allows to filter for keys', () {
                 final ls = root.lsProps(
                   withValues: true,
-                  whereProp: (key, value) {
-                    return key.endsWith('er');
+                  whereProp: ({key, path, value}) {
+                    return key?.endsWith('er') == true;
                   },
                 );
 
@@ -1442,7 +1442,7 @@ void main() {
               test('allows to filter for values', () {
                 final ls = root.lsProps(
                   withValues: true,
-                  whereProp: (key, value) {
+                  whereProp: ({key, path, value}) {
                     return value is String && value.contains('sister') == true;
                   },
                 );

@@ -284,7 +284,7 @@ class Tree<T extends Json> {
     bool Function(Tree<T> node)? where,
     bool showProps = false,
     bool withValues = false,
-    bool Function(String key, dynamic value)? whereProp,
+    WhereProp? whereProp,
   }) {
     final paths = <String>[];
 
@@ -304,7 +304,7 @@ class Tree<T extends Json> {
     String prefix = '',
     bool withValues = false,
     bool Function(Tree<T> node)? where,
-    bool Function(String key, dynamic value)? whereProp,
+    WhereProp? whereProp,
   }) => ls(
     prefix: prefix,
     where: where,
@@ -725,7 +725,7 @@ class Tree<T extends Json> {
     bool Function(Tree<T> node)? where,
     bool showProps = true,
     required bool withValues,
-    required bool Function(String key, dynamic value)? whereProp,
+    required WhereProp? whereProp,
   }) {
     if (where == null || where(this)) {
       if (!showProps) {
@@ -771,41 +771,15 @@ class Tree<T extends Json> {
     String ownPath, {
     required bool addTreeProps,
     required bool withValues,
-    required bool Function(String key, dynamic value)? whereProp,
+    required WhereProp? whereProp,
   }) {
     if (showDataPaths) {
       final data = addTreeProps ? _treeProps(this, true) : _data;
-      final dataPaths = data.ls();
+      final dataPaths = data.ls(writeValues: withValues, where: whereProp);
+
       for (var dataPath in dataPaths) {
         final node = addTreeProps ? 'node/' : '';
-
-        // Read the value, when withValues is true
-        var prop = '';
-        var v = withValues ? data.getOrNull<dynamic>(dataPath) : null;
-        if (!(v is String || v is num || v is bool)) {
-          v = null;
-        }
-
-        // If whereProp is given, check if it matches
-        var matches = true;
-        if (whereProp != null) {
-          final key = dataPath.split('/').last;
-          matches = whereProp(key, v);
-        }
-        if (!matches) {
-          continue;
-        }
-
-        // Add the value to the result string
-        if (withValues) {
-          if (v is String || v is num || v is bool) {
-            if (matches) {
-              prop = ' = $v';
-            }
-          }
-        }
-
-        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}$prop');
+        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
       }
     }
   }
