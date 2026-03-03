@@ -284,10 +284,18 @@ class Tree<T extends Json> {
     bool Function(Tree<T> node)? where,
     bool showProps = false,
     bool withValues = false,
+    bool Function(String key, dynamic value)? whereProp,
   }) {
     final paths = <String>[];
 
-    _ls(paths, '.', where: where, showProps: showProps, withValues: withValues);
+    _ls(
+      paths,
+      '.',
+      where: where,
+      showProps: showProps,
+      withValues: withValues,
+      whereProp: whereProp,
+    );
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
   }
 
@@ -296,8 +304,14 @@ class Tree<T extends Json> {
     String prefix = '',
     bool withValues = false,
     bool Function(Tree<T> node)? where,
-  }) =>
-      ls(prefix: prefix, where: where, showProps: true, withValues: withValues);
+    bool Function(String key, dynamic value)? whereProp,
+  }) => ls(
+    prefix: prefix,
+    where: where,
+    showProps: true,
+    withValues: withValues,
+    whereProp: whereProp,
+  );
 
   /// List all nodes
   Iterable<Tree<T>> lsNodes() {
@@ -711,6 +725,7 @@ class Tree<T extends Json> {
     bool Function(Tree<T> node)? where,
     bool showProps = true,
     required bool withValues,
+    required bool Function(String key, dynamic value)? whereProp,
   }) {
     if (where == null || where(this)) {
       if (!showProps) {
@@ -724,6 +739,7 @@ class Tree<T extends Json> {
         ownPath,
         addTreeProps: false,
         withValues: withValues,
+        whereProp: whereProp,
       );
 
       // Write tree properties
@@ -733,6 +749,7 @@ class Tree<T extends Json> {
         ownPath,
         addTreeProps: true,
         withValues: withValues,
+        whereProp: whereProp,
       );
     }
 
@@ -743,6 +760,7 @@ class Tree<T extends Json> {
         where: where,
         showProps: showProps,
         withValues: withValues,
+        whereProp: whereProp,
       );
     }
   }
@@ -753,16 +771,38 @@ class Tree<T extends Json> {
     String ownPath, {
     required bool addTreeProps,
     required bool withValues,
+    required bool Function(String key, dynamic value)? whereProp,
   }) {
     if (showDataPaths) {
       final data = addTreeProps ? _treeProps(this, true) : _data;
       final dataPaths = data.ls();
       for (var dataPath in dataPaths) {
         final node = addTreeProps ? 'node/' : '';
-        final v = withValues ? data.getOrNull<dynamic>(dataPath) : null;
+
+        // Read the value, when withValues is true
         var prop = '';
-        if (v is String || v is num || v is bool) {
-          prop = ' = $v';
+        var v = withValues ? data.getOrNull<dynamic>(dataPath) : null;
+        if (!(v is String || v is num || v is bool)) {
+          v = null;
+        }
+
+        // If whereProp is given, check if it matches
+        var matches = true;
+        if (whereProp != null) {
+          final key = dataPath.split('/').last;
+          matches = whereProp(key, v);
+        }
+        if (!matches) {
+          continue;
+        }
+
+        // Add the value to the result string
+        if (withValues) {
+          if (v is String || v is num || v is bool) {
+            if (matches) {
+              prop = ' = $v';
+            }
+          }
         }
 
         paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}$prop');

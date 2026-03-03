@@ -1,10 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.2] - 2026-03-03
 
 ### Changed
 
 - Allow to print the values of lsProps()
+- lsProps: Allow to filter for keys and values
 
 ## [2.0.1] - 2026-03-03
 
@@ -161,7 +162,7 @@
 
 - Initial implementation
 
-[Unreleased]: https://github.com/ggsuite/gg_tree/compare/2.0.1...HEAD
+[2.0.2]: https://github.com/ggsuite/gg_tree/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/ggsuite/gg_tree/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/ggsuite/gg_tree/compare/1.0.16...2.0.0
 [1.0.16]: https://github.com/ggsuite/gg_tree/compare/1.0.15...1.0.16

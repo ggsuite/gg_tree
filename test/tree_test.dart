@@ -1423,6 +1423,40 @@ void main() {
                 );
               });
             });
+
+            group('and whereProp given', () {
+              test('allows to filter for keys', () {
+                final ls = root.lsProps(
+                  withValues: true,
+                  whereProp: (key, value) {
+                    return key.endsWith('er');
+                  },
+                );
+
+                expect(ls, [
+                  './grandpa/dad/brother#hiBrother = Hi from brother.',
+                  './grandpa/dad/sister#hiSister = Hi from sister.',
+                ]);
+              });
+
+              test('allows to filter for values', () {
+                final ls = root.lsProps(
+                  withValues: true,
+                  whereProp: (key, value) {
+                    return value is String && value.contains('sister') == true;
+                  },
+                );
+
+                expect(ls, [
+                  './grandpa/dad/sister#me = sister',
+                  './grandpa/dad/sister#hiSister = Hi from sister.',
+                  './grandpa/dad/sister#node/key = sister',
+                  './grandpa/dad/sister#node/originalKey = sister',
+                  './grandpa/dad/sister#node/path = /grandpa/dad/sister',
+                  './grandpa/dad/sister#node/pathSimple = /grandpa/dad/sister',
+                ]);
+              });
+            });
           });
         });
 
