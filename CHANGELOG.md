@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.4] - 2026-03-04
+
+### Fixed
+
+- Fix issue when assigning keys
+
 ## [2.0.3] - 2026-03-03
 
 ### Changed
@@ -168,6 +174,7 @@
 
 - Initial implementation
 
+[2.0.4]: https://github.com/ggsuite/gg_tree/compare/2.0.3...2.0.4
 [2.0.3]: https://github.com/ggsuite/gg_tree/compare/2.0.2...2.0.3
 [2.0.2]: https://github.com/ggsuite/gg_tree/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/ggsuite/gg_tree/compare/2.0.0...2.0.1

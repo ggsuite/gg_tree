@@ -67,6 +67,7 @@ class Tree<T extends Json> {
     _throwWhenReadonly();
     _throwIfNotValidJsonKey(value);
     _key = value;
+    originalKey = value;
     parent?._makeKeysUnique();
   }
 

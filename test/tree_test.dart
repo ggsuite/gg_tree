@@ -1641,6 +1641,15 @@ void main() {
         expect(me.key, 'newMe');
       });
 
+      test('recalculates keys correctly', () {
+        expect(me.key, 'me');
+        expect(sister.key, 'sister');
+
+        sister.key = 'me';
+        expect(me.key, 'me0');
+        expect(sister.key, 'me1');
+      });
+
       test('throws when setting an invalid key', () {
         var messages = <String>[];
         try {
