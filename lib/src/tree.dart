@@ -252,7 +252,7 @@ class Tree<T extends Json> {
   Json toJson() => _toJson(this);
 
   /// Creates a [JsonTree] from a JSON map
-  Tree<T> fromJson(Json json) => _fromJson(json);
+  factory Tree.fromJson(Json json) => Tree._fromJson(json);
 
   // ...........................................................................
   /// Creates a deep copy of this tree
@@ -584,12 +584,12 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
-  Tree<T> _fromJson(Json json) {
+  factory Tree._fromJson(Json json) {
     final ch = <Tree<T>>[];
 
     if (json['_children'] != null) {
       for (final childJson in (json['_children'] as List).cast<Json>()) {
-        ch.add(_fromJson(childJson));
+        ch.add(Tree._fromJson(childJson));
       }
     }
 
@@ -597,7 +597,7 @@ class Tree<T extends Json> {
     if (json['_tags'] != null) {
       tags = (json['_tags'] as List).cast<String>();
       for (final tag in tags) {
-        _throwWhenwWrongTag(tag);
+        Tree._throwWhenwWrongTag(tag);
       }
     }
 
@@ -698,9 +698,9 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
-  final _tagRegExp = RegExp(r'[^a-zA-Z0-9]');
+  static final _tagRegExp = RegExp(r'[^a-zA-Z0-9]');
 
-  void _throwWhenwWrongTag(String tag) {
+  static void _throwWhenwWrongTag(String tag) {
     if (_tagRegExp.hasMatch(tag)) {
       throw Exception('Tag "$tag" must only contain letters and numbers.');
     }

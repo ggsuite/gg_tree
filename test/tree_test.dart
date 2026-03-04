@@ -1145,7 +1145,7 @@ void main() {
       test('creates a tree from json identical to the original', () async {
         // Create json from original tree
         final json = root.toJson();
-        final newTree = root.fromJson(json);
+        final newTree = Tree<ExampleData>.fromJson(json);
 
         // Check parents
         expect(newTree.parent, isNull);

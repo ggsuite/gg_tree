@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.5] - 2026-03-04
+
+### Changed
+
+- Make fromJson static
+
 ## [2.0.4] - 2026-03-04
 
 ### Fixed
@@ -174,6 +180,7 @@
 
 - Initial implementation
 
+[2.0.5]: https://github.com/ggsuite/gg_tree/compare/2.0.4...2.0.5
 [2.0.4]: https://github.com/ggsuite/gg_tree/compare/2.0.3...2.0.4
 [2.0.3]: https://github.com/ggsuite/gg_tree/compare/2.0.2...2.0.3
 [2.0.2]: https://github.com/ggsuite/gg_tree/compare/2.0.1...2.0.2
