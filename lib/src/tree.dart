@@ -593,7 +593,7 @@ class Tree<T extends Json> {
       }
     }
 
-    late final List<String> tags;
+    List<String> tags = [];
     if (json['_tags'] != null) {
       tags = (json['_tags'] as List).cast<String>();
       for (final tag in tags) {
