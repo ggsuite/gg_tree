@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.7] - 2026-03-06
+
+### Removed
+
+- Remove tags support
+
 ## [2.0.6] - 2026-03-04
 
 ### Fixed
@@ -186,6 +192,7 @@
 
 - Initial implementation
 
+[2.0.7]: https://github.com/ggsuite/gg_tree/compare/2.0.6...2.0.7
 [2.0.6]: https://github.com/ggsuite/gg_tree/compare/2.0.5...2.0.6
 [2.0.5]: https://github.com/ggsuite/gg_tree/compare/2.0.4...2.0.5
 [2.0.4]: https://github.com/ggsuite/gg_tree/compare/2.0.3...2.0.4

@@ -1244,7 +1244,6 @@ void main() {
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
-        expect(copy.tags, me.tags);
       });
 
       test('with data changed', () {
@@ -1255,7 +1254,6 @@ void main() {
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
-        expect(copy.tags, me.tags);
       });
 
       test('with key changed', () {
@@ -1266,7 +1264,6 @@ void main() {
         expect(copy.key, 'newKey');
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
-        expect(copy.tags, me.tags);
       });
 
       test('with isReadOnly true', () {
@@ -1278,7 +1275,6 @@ void main() {
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
-        expect(copy.tags, me.tags);
       });
 
       test('with children changed', () {
@@ -1288,7 +1284,6 @@ void main() {
         expect(copy.key, me.key);
         expect(copy.isReadOnly, isFalse);
         expect(copy.originalKey, me.originalKey);
-        expect(copy.tags, me.tags);
 
         expect(copy.children.length, 1);
         final copiedChild = copy.children.first;
@@ -1723,45 +1718,6 @@ void main() {
           messages = [(e as dynamic).message as String];
         }
         expect(messages, ['Tree node "me" is readonly']);
-      });
-    });
-
-    group('addTag, removeTag, hasTag, tags', () {
-      test('allows to add and remove tags', () {
-        expect(me.tags, ['family']);
-        me.addTag('tag1');
-        me.addTag('tag2');
-        expect(me.tags, containsAll(['tag1', 'tag2']));
-        expect(me.hasTag('tag1'), isTrue);
-        expect(me.hasTag('tag2'), isTrue);
-        expect(me.hasTag('tag3'), isFalse);
-
-        me.removeTag('tag1');
-        expect(me.tags, ['family', 'tag2']);
-      });
-
-      test('throws when readonly is set', () {
-        me.setReadOnly(true);
-
-        var messages = <String>[];
-        try {
-          me.addTag('tag1');
-        } catch (e) {
-          messages = [(e as dynamic).message as String];
-        }
-        expect(messages, ['Tree node "me" is readonly']);
-      });
-
-      test('throws when tag has wrong format', () {
-        var messages = <String>[];
-        try {
-          me.addTag('invalid tag');
-        } catch (e) {
-          messages = [(e as dynamic).message as String];
-        }
-        expect(messages, [
-          'Tag "invalid tag" must only contain letters and numbers.',
-        ]);
       });
     });
 

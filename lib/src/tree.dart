@@ -20,14 +20,12 @@ class Tree<T extends Json> {
     Iterable<Tree<T>> children = const [],
     String? originalKey,
     this.isValidJsonKey = _isValidJsonKey,
-    Iterable<String> tags = const [],
     P Function<P>(Json)? parse,
   }) : originalKey = originalKey ?? key,
        _key = key,
        _data = data,
        _children = [...children],
        _parent = parent,
-       _tags = {...tags},
        _parse = parse {
     _init(parent);
     _makeKeysUnique();
@@ -91,28 +89,6 @@ class Tree<T extends Json> {
     _throwWhenReadonly();
     _data = value;
   }
-
-  // ...........................................................................
-  /// Adds a tag to this node
-  void addTag(String tag) {
-    _throwWhenReadonly();
-    _throwWhenwWrongTag(tag);
-    if (!_tags.contains(tag)) {
-      _tags.add(tag);
-    }
-  }
-
-  /// Removes a tag from this node
-  void removeTag(String tag) {
-    _throwWhenReadonly();
-    _tags.remove(tag);
-  }
-
-  /// Returns true if this node has the given tag
-  bool hasTag(String tag) => _tags.contains(tag);
-
-  /// Returns all tags of this node
-  Iterable<String> get tags => _tags;
 
   // ...........................................................................
   /// Returns the path of this node
@@ -267,7 +243,6 @@ class Tree<T extends Json> {
     T? data,
     Iterable<Tree<T>>? children,
     String? originalKey,
-    Iterable<String>? tags,
   }) => Tree(
     key: key ?? this.key,
     parent: parent,
@@ -275,7 +250,6 @@ class Tree<T extends Json> {
     children: children?.map((e) => e.flatCopyWith()).toList() ?? [],
     originalKey: originalKey ?? this.originalKey,
     isValidJsonKey: isValidJsonKey,
-    tags: tags ?? this.tags,
   );
 
   // ...........................................................................
@@ -373,8 +347,6 @@ class Tree<T extends Json> {
   // Private
   // ######################
 
-  final Set<String> _tags;
-
   String _key;
 
   static (
@@ -395,7 +367,6 @@ class Tree<T extends Json> {
         'hiRoot': 'Hi from root.',
         'isAncestor': true,
       }),
-      tags: {'family'},
     );
 
     final grandpa = Tree<ExampleData>(
@@ -406,7 +377,6 @@ class Tree<T extends Json> {
         'hiGrandpa': 'Hi from grandpa.',
         'isAncestor': false,
       }),
-      tags: {'family'},
     );
 
     final dad = Tree<ExampleData>(
@@ -418,7 +388,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     final me = Tree<ExampleData>(
@@ -430,7 +399,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     final brother = Tree<ExampleData>(
@@ -442,7 +410,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     final sister = Tree<ExampleData>(
@@ -454,7 +421,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     final child = Tree<ExampleData>(
@@ -466,7 +432,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     final grandchild = Tree<ExampleData>(
@@ -478,7 +443,6 @@ class Tree<T extends Json> {
         'isAncestor': false,
         'nums': exampleJsonPrimitive,
       }),
-      tags: {'family'},
     );
 
     return (root, grandpa, dad, me, brother, sister, child, grandchild);
@@ -567,10 +531,6 @@ class Tree<T extends Json> {
 
     json['_data'] = tree.data.deepCopy();
 
-    if (tags.isNotEmpty) {
-      json['_tags'] = tags.toList();
-    }
-
     final childrenJson = <Json>[];
     for (final child in tree.children) {
       childrenJson.add(_toJson(child));
@@ -593,21 +553,12 @@ class Tree<T extends Json> {
       }
     }
 
-    List<String> tags = [];
-    if (json['_tags'] != null) {
-      tags = (json['_tags'] as List).cast<String>();
-      for (final tag in tags) {
-        Tree._throwWhenwWrongTag(tag);
-      }
-    }
-
     return Tree(
       key: json['key'] as String,
       originalKey: json['originalKey'] as String,
       parent: null,
       data: json['_data'] as T,
       children: ch,
-      tags: tags,
     );
   }
 
@@ -694,15 +645,6 @@ class Tree<T extends Json> {
   void _throwWhenReadonly() {
     if (isReadOnly) {
       throw Exception('Tree node "$key" is readonly');
-    }
-  }
-
-  // ...........................................................................
-  static final _tagRegExp = RegExp(r'[^a-zA-Z0-9]');
-
-  static void _throwWhenwWrongTag(String tag) {
-    if (_tagRegExp.hasMatch(tag)) {
-      throw Exception('Tag "$tag" must only contain letters and numbers.');
     }
   }
 
