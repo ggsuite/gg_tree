@@ -259,6 +259,7 @@ class Tree<T extends Json> {
     bool Function(Tree<T> node)? where,
     bool showProps = false,
     bool withValues = false,
+    bool alsoComplexValues = false,
     WhereProp? whereProp,
   }) {
     final paths = <String>[];
@@ -269,6 +270,7 @@ class Tree<T extends Json> {
       where: where,
       showProps: showProps,
       withValues: withValues,
+      alsoComplexValues: alsoComplexValues,
       whereProp: whereProp,
     );
     return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
@@ -278,6 +280,7 @@ class Tree<T extends Json> {
   List<String> lsProps({
     String prefix = '',
     bool withValues = false,
+    bool alsoComplexValues = false,
     bool Function(Tree<T> node)? where,
     WhereProp? whereProp,
   }) => ls(
@@ -286,6 +289,7 @@ class Tree<T extends Json> {
     showProps: true,
     withValues: withValues,
     whereProp: whereProp,
+    alsoComplexValues: alsoComplexValues,
   );
 
   /// List all nodes
@@ -666,8 +670,9 @@ class Tree<T extends Json> {
     List<String> paths,
     String ownPath, {
     bool Function(Tree<T> node)? where,
-    bool showProps = true,
+    required bool showProps,
     required bool withValues,
+    required bool alsoComplexValues,
     required WhereProp? whereProp,
   }) {
     if (where == null || where(this)) {
@@ -682,6 +687,7 @@ class Tree<T extends Json> {
         ownPath,
         addTreeProps: false,
         withValues: withValues,
+        alsoComplexValues: alsoComplexValues,
         whereProp: whereProp,
       );
 
@@ -692,6 +698,7 @@ class Tree<T extends Json> {
         ownPath,
         addTreeProps: true,
         withValues: withValues,
+        alsoComplexValues: alsoComplexValues,
         whereProp: whereProp,
       );
     }
@@ -702,6 +709,7 @@ class Tree<T extends Json> {
         '$ownPath/${child.key}',
         where: where,
         showProps: showProps,
+        alsoComplexValues: alsoComplexValues,
         withValues: withValues,
         whereProp: whereProp,
       );
@@ -714,11 +722,16 @@ class Tree<T extends Json> {
     String ownPath, {
     required bool addTreeProps,
     required bool withValues,
+    required bool alsoComplexValues,
     required WhereProp? whereProp,
   }) {
     if (showDataPaths) {
       final data = addTreeProps ? _treeProps(this, true) : _data;
-      final dataPaths = data.ls(writeValues: withValues, where: whereProp);
+      final dataPaths = data.ls(
+        writeValues: withValues,
+        alsoComplexValues: alsoComplexValues,
+        where: whereProp,
+      );
 
       for (var dataPath in dataPaths) {
         final node = addTreeProps ? 'node/' : '';

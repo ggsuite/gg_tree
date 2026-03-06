@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Add alsoComplexValues param to list also complex values
+
 ## [2.0.7] - 2026-03-06
 
 ### Removed
@@ -192,6 +198,7 @@
 
 - Initial implementation
 
+[Unreleased]: https://github.com/ggsuite/gg_tree/compare/2.0.7...HEAD
 [2.0.7]: https://github.com/ggsuite/gg_tree/compare/2.0.6...2.0.7
 [2.0.6]: https://github.com/ggsuite/gg_tree/compare/2.0.5...2.0.6
 [2.0.5]: https://github.com/ggsuite/gg_tree/compare/2.0.4...2.0.5

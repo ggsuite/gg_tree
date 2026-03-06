@@ -1397,7 +1397,7 @@ void main() {
             });
           });
 
-          group('withProps true', () {
+          group('withValues true', () {
             group('adds also values of the properties', () {
               test('for node root', () async {
                 final ls = root.lsProps(withValues: true);
@@ -1449,6 +1449,27 @@ void main() {
                   './grandpa/dad/sister#node/originalKey = sister',
                   './grandpa/dad/sister#node/path = /grandpa/dad/sister',
                   './grandpa/dad/sister#node/pathSimple = /grandpa/dad/sister',
+                ]);
+              });
+            });
+
+            group('and alsoCmoplexValues given', () {
+              test('prints also complex values', () {
+                final ls = grandchild.lsProps(
+                  alsoComplexValues: true,
+                  whereProp: ({key, path, value}) => isComplexJsonValue(value),
+                );
+                expect(ls, [
+                  '.#. = {me: grandchild, hiGrandchild: Hi from grandchild., '
+                      'isAncestor: false, nums: {string: Hello, World, int: 42,'
+                      ' double: 3.14159, true: true, false: false, null: '
+                      'null}}',
+                  '.#nums',
+                  '.#node/. = {key: grandchild, originalKey: grandchild, '
+                      'isReadOnly: false, childCount: 0, siblingsCount: 1, '
+                      'index: 0, reverseIndex: 0, path: '
+                      '/grandpa/dad/me/child/grandchild, pathSimple: '
+                      '/grandpa/dad/me/child/grandchild, isRoot: false}',
                 ]);
               });
             });
