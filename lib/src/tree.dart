@@ -332,7 +332,7 @@ class Tree<T extends Json> {
       return;
     }
 
-    for (final child in children) {
+    for (final child in [...children]) {
       child.visit(
         visitor,
         topDown: topDown,
