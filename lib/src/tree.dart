@@ -187,6 +187,12 @@ class Tree<T extends Json> {
   /// Finds a node by path segments. Throws when the node could not be found.
   Tree<T> findNode(String path) => _findNode(path, throwWhenNotFound: true)!;
 
+  /// Returns the next sibling of this node, or null if there is none
+  Tree<T>? get nextSibling => _nextSibling;
+
+  /// Returns the previous sibling of this node, or null if there is none
+  Tree<T>? get previousSibling => _previousSibling;
+
   // ...........................................................................
   /// Returns a json value for this query
   V? getOrNull<V>(String query) => _getOrNull(query);
@@ -1118,4 +1124,13 @@ class Tree<T extends Json> {
       );
     }
   }
+
+  Tree<T>? get _nextSibling => parent?.children
+      .cast<Tree<T>>()
+      .skipWhile((s) => s != this)
+      .skip(1)
+      .firstOrNull;
+
+  Tree<T>? get _previousSibling =>
+      parent?.children.cast<Tree<T>>().takeWhile((s) => s != this).lastOrNull;
 }

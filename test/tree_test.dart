@@ -555,6 +555,34 @@ void main() {
       });
     });
 
+    group('previousSibling, nextSibling', () {
+      late final Tree<ExampleData> tree;
+
+      setUpAll(() {
+        tree = Tree<ExampleData>(
+          data: ExampleData({}),
+          key: 'root',
+          children: [
+            Tree<ExampleData>(key: 'child0', data: ExampleData({})),
+            Tree<ExampleData>(key: 'child1', data: ExampleData({})),
+            Tree<ExampleData>(key: 'child2', data: ExampleData({})),
+          ],
+        );
+      });
+
+      test('should return previous sibling', () {
+        expect(tree.children.elementAt(0).previousSibling, isNull);
+        expect(tree.children.elementAt(1).previousSibling?.key, 'child0');
+        expect(tree.children.elementAt(2).previousSibling?.key, 'child1');
+      });
+
+      test('should return next sibling', () {
+        expect(tree.children.elementAt(0).nextSibling?.key, 'child1');
+        expect(tree.children.elementAt(1).nextSibling?.key, 'child2');
+        expect(tree.children.elementAt(2).nextSibling, isNull);
+      });
+    });
+
     group('get', () {
       group('throws', () {
         group('when node is not found', () {
