@@ -353,6 +353,44 @@ class Tree<T extends Json> {
     }
   }
 
+  // ...........................................................................
+  /// Visits all nodes in this tree asynchronously
+  Future<void> visitAsync(
+    Future<void> Function(Tree<T> node) visitor, {
+    bool topDown = true,
+    bool Function(Tree<T> node)? where,
+    bool Function(Tree<T> node)? stopAfter,
+    bool Function(Tree<T> node)? stopBefore,
+  }) async {
+    final matches = where == null || where(this);
+
+    if (stopBefore?.call(this) == true) {
+      return;
+    }
+
+    if (topDown && matches) {
+      await visitor(this);
+    }
+
+    if (stopAfter?.call(this) == true) {
+      return;
+    }
+
+    for (final child in [...children]) {
+      await child.visitAsync(
+        visitor,
+        topDown: topDown,
+        where: where,
+        stopAfter: stopAfter,
+        stopBefore: stopBefore,
+      );
+    }
+
+    if (!topDown && matches) {
+      await visitor(this);
+    }
+  }
+
   // ######################
   // Private
   // ######################

@@ -1804,38 +1804,113 @@ void main() {
           ]);
         });
       });
-    });
 
-    group('with stopAfter', () {
-      test('stops visiting when the callback returns false', () {
-        final visitedKeys = <String>[];
-        root.visit((node) {
-          visitedKeys.add(node.key);
-        }, stopAfter: (node) => node.key == 'dad');
+      group('with stopAfter', () {
+        test('stops visiting when the callback returns false', () {
+          final visitedKeys = <String>[];
+          root.visit((node) {
+            visitedKeys.add(node.key);
+          }, stopAfter: (node) => node.key == 'dad');
 
-        expect(visitedKeys, ['root', 'grandpa', 'dad']);
+          expect(visitedKeys, ['root', 'grandpa', 'dad']);
+        });
+      });
+
+      group('with stopBefore', () {
+        test('stops visiting when the callback returns false', () {
+          final visitedKeys = <String>[];
+          root.visit((node) {
+            visitedKeys.add(node.key);
+          }, stopBefore: (node) => node.key == 'dad');
+
+          expect(visitedKeys, ['root', 'grandpa']);
+        });
+      });
+
+      group('with where', () {
+        test('only visits nodes matching the condition', () {
+          final visitedKeys = <String>[];
+          root.visit((node) {
+            visitedKeys.add(node.key);
+          }, where: (node) => node.key.contains('d'));
+
+          expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+        });
       });
     });
 
-    group('with stopBefore', () {
-      test('stops visiting when the callback returns false', () {
-        final visitedKeys = <String>[];
-        root.visit((node) {
-          visitedKeys.add(node.key);
-        }, stopBefore: (node) => node.key == 'dad');
+    group('visitAsync', () {
+      group('visits all nodes in the tree', () {
+        test('with topDown = true', () async {
+          final visitedKeys = <String>[];
+          await root.visitAsync((node) async => visitedKeys.add(node.key));
 
-        expect(visitedKeys, ['root', 'grandpa']);
+          expect(visitedKeys, [
+            'root',
+            'grandpa',
+            'dad',
+            'me',
+            'child',
+            'grandchild',
+            'brother',
+            'sister',
+          ]);
+        });
+
+        test('with topDown = false', () async {
+          final visitedKeys = <String>[];
+          await root.visitAsync(
+            (node) async => visitedKeys.add(node.key),
+            topDown: false,
+          );
+
+          expect(visitedKeys, [
+            'grandchild',
+            'child',
+            'me',
+            'brother',
+            'sister',
+            'dad',
+            'grandpa',
+            'root',
+          ]);
+        });
       });
-    });
 
-    group('with where', () {
-      test('only visits nodes matching the condition', () {
-        final visitedKeys = <String>[];
-        root.visit((node) {
-          visitedKeys.add(node.key);
-        }, where: (node) => node.key.contains('d'));
+      group('with stopAfter', () {
+        test('stops visiting when the callback returns true', () async {
+          final visitedKeys = <String>[];
+          await root.visitAsync(
+            (node) async => visitedKeys.add(node.key),
+            stopAfter: (node) => node.key == 'dad',
+          );
 
-        expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+          expect(visitedKeys, ['root', 'grandpa', 'dad']);
+        });
+      });
+
+      group('with stopBefore', () {
+        test('stops visiting when the callback returns true', () async {
+          final visitedKeys = <String>[];
+          await root.visitAsync(
+            (node) async => visitedKeys.add(node.key),
+            stopBefore: (node) => node.key == 'dad',
+          );
+
+          expect(visitedKeys, ['root', 'grandpa']);
+        });
+      });
+
+      group('with where', () {
+        test('only visits nodes matching the condition', () async {
+          final visitedKeys = <String>[];
+          await root.visitAsync(
+            (node) async => visitedKeys.add(node.key),
+            where: (node) => node.key.contains('d'),
+          );
+
+          expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+        });
       });
     });
 
