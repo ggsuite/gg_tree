@@ -261,6 +261,75 @@ class Tree<T extends Json> {
   );
 
   // ...........................................................................
+  /// Lists all objects paths of this tree.
+  ///
+  /// Use [format] to render the tree as [TreeLsFormat.paths] (default),
+  /// [TreeLsFormat.txtTree] or [TreeLsFormat.markdown]. The implementation
+  /// lives in the private `_TreeLs` extension in `ls.dart`.
+  List<String> ls({
+    String prefix = '',
+    bool Function(Tree<T> node)? where,
+    bool showProps = false,
+    bool withValues = false,
+    bool alsoComplexValues = false,
+    WhereProp? whereProp,
+    TreeLsFormat format = TreeLsFormat.paths,
+  }) => lsPaths(
+    prefix: prefix,
+    where: where,
+    showProps: showProps,
+    withValues: withValues,
+    alsoComplexValues: alsoComplexValues,
+    whereProp: whereProp,
+    format: format,
+  );
+
+  // ...........................................................................
+  /// Shows all nodes together with properties
+  List<String> lsProps({
+    String prefix = '',
+    bool withValues = false,
+    bool alsoComplexValues = false,
+    bool Function(Tree<T> node)? where,
+    WhereProp? whereProp,
+  }) => ls(
+    prefix: prefix,
+    where: where,
+    showProps: true,
+    withValues: withValues,
+    whereProp: whereProp,
+    alsoComplexValues: alsoComplexValues,
+  );
+
+  // ...........................................................................
+  /// List all nodes
+  Iterable<Tree<T>> lsNodes() {
+    final result = <Tree<T>>[];
+
+    _lsNodes(result);
+    return result;
+  }
+
+  // ...........................................................................
+  /// List all nodes where the given condition is met
+  Iterable<Tree<T>> lsNodesWhere(bool Function(Tree<T> node)? where) {
+    final result = <Tree<T>>[];
+
+    _lsNodes(result);
+
+    return where != null ? result.where(where) : result;
+  }
+
+  // ...........................................................................
+  void _lsNodes(List<Tree<T>> nodes) {
+    nodes.add(this);
+
+    for (final child in children) {
+      child._lsNodes(nodes);
+    }
+  }
+
+  // ...........................................................................
   /// Visits all nodes in this tree
   void visit(
     void Function(Tree<T> node) visitor, {

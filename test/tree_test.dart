@@ -1321,6 +1321,41 @@ void main() {
       });
     });
 
+    group('lsNodes', () {
+      test('returns all nodes in the tree', () {
+        expect(root.lsNodes(), [
+          root,
+          grandpa,
+          dad,
+          me,
+          child,
+          grandchild,
+          brother,
+          sister,
+        ]);
+        expect(me.lsNodes(), [me, child, grandchild]);
+      });
+    });
+
+    group('lsNodesWhere', () {
+      test('returns all nodes matching the given condition', () {
+        expect(root.lsNodesWhere((node) => node.key.startsWith('g')), [
+          grandpa,
+          grandchild,
+        ]);
+
+        expect(me.lsNodesWhere((node) => node.key.contains('h')), [
+          child,
+          grandchild,
+        ]);
+      });
+
+      test('returns all nodes when the condition is null', () {
+        expect(root.lsNodesWhere(null), root.lsNodes());
+        expect(me.lsNodesWhere(null), [me, child, grandchild]);
+      });
+    });
+
     group('make sure children have unique node names', () {
       late Tree<ExampleData> parent;
       late Tree<ExampleData> child0;
@@ -1721,6 +1756,13 @@ void main() {
           'Failed to parse data of node "root" to type TestData:',
           'Exception: Parse error',
         ]);
+      });
+    });
+
+    group('lsNodesWhere', () {
+      test('returns all nodes when the condition is null', () {
+        expect(root.lsNodesWhere(null), root.lsNodes());
+        expect(me.lsNodesWhere(null), [me, child, grandchild]);
       });
     });
   });

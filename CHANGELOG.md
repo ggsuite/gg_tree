@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.3.1] - 2026-06-08
+
+### Changed
+
+- refactor(ls): move lsNodes back to Tree
+
 ## [2.3.0] - 2026-06-08
 
 ### Added
@@ -228,6 +234,7 @@
 
 - Initial implementation
 
+[2.3.1]: https://github.com/ggsuite/gg_tree/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/ggsuite/gg_tree/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/ggsuite/gg_tree/compare/2.1.0...2.2.0
 [2.1.0]: https://github.com/ggsuite/gg_tree/compare/2.0.10...2.1.0

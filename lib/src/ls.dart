@@ -30,11 +30,15 @@ String _dataLabel(String key, dynamic value, {required bool isRoot}) {
   return '$prefix$key = $renderedValue';
 }
 
-/// Lists the contents of a [Tree] in different [TreeLsFormat]s.
-extension TreeLs<T extends Json> on Tree<T> {
+/// Private implementation of the `ls` family of methods declared on [Tree].
+///
+/// The public entry points live on [Tree] itself (as instance methods) so that
+/// they are inherited by derived classes and visible on `Tree<dynamic>`, which
+/// an extension's `on Tree<T extends Json>` clause would not cover.
+extension _TreeLs<T extends Json> on Tree<T> {
   // ...........................................................................
-  /// Lists all objects paths of this tree
-  List<String> ls({
+  /// Lists all objects paths of this tree, see [Tree.ls].
+  List<String> lsPaths({
     String prefix = '',
     bool Function(Tree<T> node)? where,
     bool showProps = false,
@@ -64,42 +68,6 @@ extension TreeLs<T extends Json> on Tree<T> {
       case TreeLsFormat.markdown:
         return _lsMarkdown(withValues: withValues);
     }
-  }
-
-  // ...........................................................................
-  /// Shows all nodes together with properties
-  List<String> lsProps({
-    String prefix = '',
-    bool withValues = false,
-    bool alsoComplexValues = false,
-    bool Function(Tree<T> node)? where,
-    WhereProp? whereProp,
-  }) => ls(
-    prefix: prefix,
-    where: where,
-    showProps: true,
-    withValues: withValues,
-    whereProp: whereProp,
-    alsoComplexValues: alsoComplexValues,
-  );
-
-  // ...........................................................................
-  /// List all nodes
-  Iterable<Tree<T>> lsNodes() {
-    final result = <Tree<T>>[];
-
-    _lsNodes(result);
-    return result;
-  }
-
-  // ...........................................................................
-  /// List all nodes where the given condition is met
-  Iterable<Tree<T>> lsNodesWhere(bool Function(Tree<T> node)? where) {
-    final result = <Tree<T>>[];
-
-    _lsNodes(result);
-
-    return where != null ? result.where(where) : result;
   }
 
   // ...........................................................................
@@ -307,15 +275,6 @@ extension TreeLs<T extends Json> on Tree<T> {
         final node = addTreeProps ? 'node/' : '';
         paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
       }
-    }
-  }
-
-  // ...........................................................................
-  void _lsNodes(List<Tree<T>> nodes) {
-    nodes.add(this);
-
-    for (final child in children) {
-      child._lsNodes(nodes);
     }
   }
 }

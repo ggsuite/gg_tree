@@ -13,17 +13,11 @@ import 'package:test/test.dart';
 void main() {
   group('TreeLs', () {
     late Tree<ExampleData> root;
-    late Tree<ExampleData> grandpa;
-    late Tree<ExampleData> dad;
     late Tree<ExampleData> me;
-    late Tree<ExampleData> brother;
-    late Tree<ExampleData> sister;
-    late Tree<ExampleData> child;
     late Tree<ExampleData> grandchild;
 
     setUp(() {
-      (root, grandpa, dad, me, brother, sister, child, grandchild) =
-          Tree.exampleNodes();
+      (root, _, _, me, _, _, _, grandchild) = Tree.exampleNodes();
     });
 
     group('ls, lsProps', () {
@@ -391,36 +385,6 @@ void main() {
             ]);
           });
         });
-      });
-    });
-
-    group('lsNodes', () {
-      test('returns all nodes in the tree', () {
-        expect(root.lsNodes(), [
-          root,
-          grandpa,
-          dad,
-          me,
-          child,
-          grandchild,
-          brother,
-          sister,
-        ]);
-        expect(me.lsNodes(), [me, child, grandchild]);
-      });
-    });
-
-    group('lsNodesWhere', () {
-      test('returns all nodes matching the given condition', () {
-        expect(root.lsNodesWhere((node) => node.key.startsWith('g')), [
-          grandpa,
-          grandchild,
-        ]);
-
-        expect(me.lsNodesWhere((node) => node.key.contains('h')), [
-          child,
-          grandchild,
-        ]);
       });
     });
   });
