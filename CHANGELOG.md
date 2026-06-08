@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.3.0] - 2026-06-08
+
+### Added
+
+- Add code to print the output of ls in different formats
+
 ## [2.2.0] - 2026-03-28
 
 ### Added
@@ -222,6 +228,7 @@
 
 - Initial implementation
 
+[2.3.0]: https://github.com/ggsuite/gg_tree/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/ggsuite/gg_tree/compare/2.1.0...2.2.0
 [2.1.0]: https://github.com/ggsuite/gg_tree/compare/2.0.10...2.1.0
 [2.0.10]: https://github.com/ggsuite/gg_tree/compare/2.0.8...2.0.10

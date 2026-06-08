@@ -7,6 +7,8 @@
 import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
 
+part 'ls.dart';
+
 const _isValidJsonKey = isValidJsonKey;
 
 /// A tree of composition items reflecting the generator hierarchy
@@ -257,63 +259,6 @@ class Tree<T extends Json> {
     originalKey: originalKey ?? this.originalKey,
     isValidJsonKey: isValidJsonKey,
   );
-
-  // ...........................................................................
-  /// Lists all objects paths of this tree
-  List<String> ls({
-    String prefix = '',
-    bool Function(Tree<T> node)? where,
-    bool showProps = false,
-    bool withValues = false,
-    bool alsoComplexValues = false,
-    WhereProp? whereProp,
-  }) {
-    final paths = <String>[];
-
-    _ls(
-      paths,
-      '.',
-      where: where,
-      showProps: showProps,
-      withValues: withValues,
-      alsoComplexValues: alsoComplexValues,
-      whereProp: whereProp,
-    );
-    return prefix.isEmpty ? paths : paths.map((e) => '$prefix$e').toList();
-  }
-
-  /// Shows all nodes together with properties
-  List<String> lsProps({
-    String prefix = '',
-    bool withValues = false,
-    bool alsoComplexValues = false,
-    bool Function(Tree<T> node)? where,
-    WhereProp? whereProp,
-  }) => ls(
-    prefix: prefix,
-    where: where,
-    showProps: true,
-    withValues: withValues,
-    whereProp: whereProp,
-    alsoComplexValues: alsoComplexValues,
-  );
-
-  /// List all nodes
-  Iterable<Tree<T>> lsNodes() {
-    final result = <Tree<T>>[];
-
-    _lsNodes(result);
-    return result;
-  }
-
-  /// List all nodes where the given condition is met
-  Iterable<Tree<T>> lsNodesWhere(bool Function(Tree<T> node)? where) {
-    final result = <Tree<T>>[];
-
-    _lsNodes(result);
-
-    return where != null ? result.where(where) : result;
-  }
 
   // ...........................................................................
   /// Visits all nodes in this tree
@@ -710,90 +655,6 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
-  void _ls(
-    List<String> paths,
-    String ownPath, {
-    bool Function(Tree<T> node)? where,
-    required bool showProps,
-    required bool withValues,
-    required bool alsoComplexValues,
-    required WhereProp? whereProp,
-  }) {
-    if (where == null || where(this)) {
-      if (!showProps) {
-        paths.add(ownPath);
-      }
-
-      // Write data properties
-      _addProps(
-        showProps,
-        paths,
-        ownPath,
-        addTreeProps: false,
-        withValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        whereProp: whereProp,
-      );
-
-      // Write tree properties
-      _addProps(
-        showProps,
-        paths,
-        ownPath,
-        addTreeProps: true,
-        withValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        whereProp: whereProp,
-      );
-    }
-
-    for (final child in children) {
-      child._ls(
-        paths,
-        '$ownPath/${child.key}',
-        where: where,
-        showProps: showProps,
-        alsoComplexValues: alsoComplexValues,
-        withValues: withValues,
-        whereProp: whereProp,
-      );
-    }
-  }
-
-  void _addProps(
-    bool showDataPaths,
-    List<String> paths,
-    String ownPath, {
-    required bool addTreeProps,
-    required bool withValues,
-    required bool alsoComplexValues,
-    required WhereProp? whereProp,
-  }) {
-    if (showDataPaths) {
-      final data = addTreeProps ? _treeProps(this, true) : _data;
-      final dataPaths = data.ls(
-        writeValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        where: whereProp,
-      );
-
-      for (var dataPath in dataPaths) {
-        final node = addTreeProps ? 'node/' : '';
-        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
-      }
-    }
-  }
-
-  // ...........................................................................
-  void _lsNodes(List<Tree<T>> nodes) {
-    nodes.add(this);
-
-    for (final child in children) {
-      child._lsNodes(nodes);
-    }
-  }
-
-  // ...........................................................................
   void _makeKeysUnique() {
     if (_children.length <= 1) {
       return;
@@ -1020,7 +881,7 @@ class Tree<T extends Json> {
   // ...........................................................................
   void _throwAbsolutePathNotFound(
     Iterable<String> path,
-    Tree<dynamic> node,
+    Tree<T> node,
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');
@@ -1051,7 +912,7 @@ class Tree<T extends Json> {
   // ...........................................................................
   void _throwRelativePathNotFound(
     Iterable<String> path,
-    Tree<dynamic> node,
+    Tree<T> node,
     List<String> okSegments,
   ) {
     final prefix = okSegments.join('/');

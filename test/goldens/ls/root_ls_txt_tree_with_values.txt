@@ -1,0 +1,74 @@
+root
+├── #me = "root"
+├── #hiRoot = "Hi from root."
+├── #isAncestor = true
+└── grandpa
+    ├── #me = "grandpa"
+    ├── #hiGrandpa = "Hi from grandpa."
+    ├── #isAncestor = false
+    └── dad
+        ├── #me = "dad"
+        ├── #hiDad = "Hi from dad."
+        ├── #isAncestor = false
+        ├── #nums
+        │   ├── string = "Hello, World"
+        │   ├── int = 42
+        │   ├── double = 3.14159
+        │   ├── true = true
+        │   ├── false = false
+        │   └── null = null
+        ├── me
+        │   ├── #me = "me"
+        │   ├── #hiMe = "Hi from me."
+        │   ├── #isAncestor = false
+        │   ├── #nums
+        │   │   ├── string = "Hello, World"
+        │   │   ├── int = 42
+        │   │   ├── double = 3.14159
+        │   │   ├── true = true
+        │   │   ├── false = false
+        │   │   └── null = null
+        │   └── child
+        │       ├── #me = "child"
+        │       ├── #hiChild = "Hi from child."
+        │       ├── #isAncestor = false
+        │       ├── #nums
+        │       │   ├── string = "Hello, World"
+        │       │   ├── int = 42
+        │       │   ├── double = 3.14159
+        │       │   ├── true = true
+        │       │   ├── false = false
+        │       │   └── null = null
+        │       └── grandchild
+        │           ├── #me = "grandchild"
+        │           ├── #hiGrandchild = "Hi from grandchild."
+        │           ├── #isAncestor = false
+        │           └── #nums
+        │               ├── string = "Hello, World"
+        │               ├── int = 42
+        │               ├── double = 3.14159
+        │               ├── true = true
+        │               ├── false = false
+        │               └── null = null
+        ├── brother
+        │   ├── #me = "brother"
+        │   ├── #hiBrother = "Hi from brother."
+        │   ├── #isAncestor = false
+        │   └── #nums
+        │       ├── string = "Hello, World"
+        │       ├── int = 42
+        │       ├── double = 3.14159
+        │       ├── true = true
+        │       ├── false = false
+        │       └── null = null
+        └── sister
+            ├── #me = "sister"
+            ├── #hiSister = "Hi from sister."
+            ├── #isAncestor = false
+            └── #nums
+                ├── string = "Hello, World"
+                ├── int = 42
+                ├── double = 3.14159
+                ├── true = true
+                ├── false = false
+                └── null = null
