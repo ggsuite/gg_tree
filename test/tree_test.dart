@@ -1831,6 +1831,124 @@ void main() {
       });
     });
 
+    group('visitFutureOr', () {
+      group('visits all nodes in the tree', () {
+        test('with a synchronous visitor', () {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) {
+            visitedKeys.add(node.key);
+          });
+
+          expect(result, isNull);
+          expect(visitedKeys, [
+            'root',
+            'grandpa',
+            'dad',
+            'me',
+            'child',
+            'grandchild',
+            'brother',
+            'sister',
+          ]);
+        });
+
+        test('with an asynchronous visitor', () async {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) async {
+            await Future<void>.delayed(Duration.zero);
+            visitedKeys.add(node.key);
+          });
+
+          expect(result, isA<Future<void>>());
+          await result;
+
+          expect(visitedKeys, [
+            'root',
+            'grandpa',
+            'dad',
+            'me',
+            'child',
+            'grandchild',
+            'brother',
+            'sister',
+          ]);
+        });
+
+        test('with a visitor that mixes sync and async results', () async {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) {
+            if (node.key == 'dad') {
+              return Future<void>.delayed(
+                Duration.zero,
+              ).then((_) => visitedKeys.add(node.key));
+            }
+            visitedKeys.add(node.key);
+            return null;
+          });
+
+          expect(result, isA<Future<void>>());
+          await result;
+
+          expect(visitedKeys, [
+            'root',
+            'grandpa',
+            'dad',
+            'me',
+            'child',
+            'grandchild',
+            'brother',
+            'sister',
+          ]);
+        });
+      });
+
+      group('with stopAfter', () {
+        test('stops visiting when the callback returns true', () async {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) async {
+            visitedKeys.add(node.key);
+          }, stopAfter: (node) => node.key == 'dad');
+
+          await result;
+          expect(visitedKeys, ['root', 'grandpa', 'dad']);
+        });
+
+        test('stops visiting with a synchronous visitor', () {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) {
+            visitedKeys.add(node.key);
+          }, stopAfter: (node) => node.key == 'dad');
+
+          expect(result, isNull);
+          expect(visitedKeys, ['root', 'grandpa', 'dad']);
+        });
+      });
+
+      group('with stopBefore', () {
+        test('stops visiting when the callback returns true', () async {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) async {
+            visitedKeys.add(node.key);
+          }, stopBefore: (node) => node.key == 'dad');
+
+          await result;
+          expect(visitedKeys, ['root', 'grandpa']);
+        });
+      });
+
+      group('with where', () {
+        test('only visits nodes matching the condition', () async {
+          final visitedKeys = <String>[];
+          final result = root.visitFutureOr((node) async {
+            visitedKeys.add(node.key);
+          }, where: (node) => node.key.contains('d'));
+
+          await result;
+          expect(visitedKeys, ['grandpa', 'dad', 'child', 'grandchild']);
+        });
+      });
+    });
+
     group('parsed', () {
       test('works when a parse function is given', () {
         final tree = Tree<Json>(

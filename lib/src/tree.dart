@@ -4,6 +4,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import 'dart:async';
+
 import 'package:gg_json/gg_json.dart';
 import 'package:gg_tree/gg_tree.dart';
 
@@ -425,6 +427,25 @@ class Tree<T extends Json> {
     }
   }
 
+  // ...........................................................................
+  /// Visits all nodes in this tree in the same top-down (pre-order)
+  /// sequence as [visitAsync], but without per-node async overhead:
+  /// the traversal only suspends when [visitor] actually returns a
+  /// [Future]. When the whole traversal completes synchronously, no
+  /// [Future] is allocated and `null` is returned.
+  ///
+  /// Like [visitAsync], each node's children are snapshotted after the
+  /// node has been visited, so visitors may safely mutate the tree.
+  FutureOr<void> visitFutureOr(
+    FutureOr<void> Function(Tree<T> node) visitor, {
+    bool Function(Tree<T> node)? where,
+    bool Function(Tree<T> node)? stopAfter,
+    bool Function(Tree<T> node)? stopBefore,
+  }) {
+    final stack = <Tree<T>>[this];
+    return _visitFutureOr(stack, visitor, where, stopAfter, stopBefore);
+  }
+
   // ######################
   // Private
   // ######################
@@ -547,6 +568,55 @@ class Tree<T extends Json> {
     _throwOnForbiddenKey();
     _adoptConstructorChildren();
     this.parent = parent;
+  }
+
+  FutureOr<void> _visitFutureOr(
+    List<Tree<T>> stack,
+    FutureOr<void> Function(Tree<T> node) visitor,
+    bool Function(Tree<T> node)? where,
+    bool Function(Tree<T> node)? stopAfter,
+    bool Function(Tree<T> node)? stopBefore,
+  ) {
+    while (stack.isNotEmpty) {
+      final node = stack.removeLast();
+
+      final matches = where == null || where(node);
+
+      if (stopBefore != null && stopBefore(node)) {
+        continue;
+      }
+
+      if (matches) {
+        final result = visitor(node);
+        if (result is Future) {
+          return result.then((_) {
+            if (stopAfter == null || !stopAfter(node)) {
+              node._pushChildrenReversed(stack);
+            }
+            return _visitFutureOr(stack, visitor, where, stopAfter, stopBefore);
+          });
+        }
+      }
+
+      if (stopAfter != null && stopAfter(node)) {
+        continue;
+      }
+
+      node._pushChildrenReversed(stack);
+    }
+    return null;
+  }
+
+  // ...........................................................................
+  /// Pushes the children onto [stack] in reverse order, so that they
+  /// are popped in their original order. Pushing copies the child
+  /// references, which gives the same snapshot semantics as the
+  /// `[...children]` copy in [visit] and [visitAsync].
+  void _pushChildrenReversed(List<Tree<T>> stack) {
+    final children = _children;
+    for (var i = children.length - 1; i >= 0; i--) {
+      stack.add(children[i]);
+    }
   }
 
   // ...........................................................................

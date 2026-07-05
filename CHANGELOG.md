@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.0] - 2026-07-05
+
+### Added
+
+- Add visitFutureOr
+
 ## [2.4.0] - 2026-07-05
 
 ### Changed
@@ -240,6 +246,7 @@
 
 - Initial implementation
 
+[2.5.0]: https://github.com/ggsuite/gg_tree/compare/2.4.0...2.5.0
 [2.4.0]: https://github.com/ggsuite/gg_tree/compare/2.3.1...2.4.0
 [2.3.1]: https://github.com/ggsuite/gg_tree/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/ggsuite/gg_tree/compare/2.2.0...2.3.0
