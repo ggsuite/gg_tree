@@ -131,6 +131,70 @@ void main() {
           expect(grandchild.parent, same(newRoot));
         });
       });
+
+      group('handles special children', () {
+        test('collapses duplicate child instances to the last occurrence', () {
+          final a = Tree<ExampleData>(key: 'a', data: ExampleData.example());
+          final b = Tree<ExampleData>(key: 'b', data: ExampleData.example());
+
+          final parent = Tree<ExampleData>(
+            key: 'parent',
+            data: ExampleData.example(),
+            children: [a, b, a],
+          );
+
+          expect(parent.children.toList(), [b, a]);
+          expect(a.parent, same(parent));
+          expect(b.parent, same(parent));
+
+          // The surviving child keeps its clean key
+          expect(a.key, 'a');
+          expect(b.key, 'b');
+        });
+
+        test('throws when a child is readonly', () {
+          final a = Tree<ExampleData>(key: 'a', data: ExampleData.example());
+          a.isReadOnly = true;
+
+          var messages = <String>[];
+          try {
+            Tree<ExampleData>(
+              key: 'parent',
+              data: ExampleData.example(),
+              children: [a],
+            );
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Tree node "a" is readonly']);
+        });
+
+        test('makes keys unique when a later child is readonly', () {
+          final ev = ExampleData.example();
+          final a = Tree<ExampleData>(key: 'x', data: ev);
+          final b = Tree<ExampleData>(key: 'x', data: ev);
+          final readonly = Tree<ExampleData>(key: 'ro', data: ev);
+          readonly.isReadOnly = true;
+
+          var messages = <String>[];
+          try {
+            Tree<ExampleData>(
+              key: 'parent',
+              data: ev,
+              children: [a, b, readonly],
+            );
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Tree node "ro" is readonly']);
+
+          // The children attached before the throw got unique keys
+          expect(a.key, 'x0');
+          expect(b.key, 'x1');
+        });
+      });
     });
 
     group('key', () {
@@ -580,6 +644,24 @@ void main() {
         expect(tree.children.elementAt(0).nextSibling?.key, 'child1');
         expect(tree.children.elementAt(1).nextSibling?.key, 'child2');
         expect(tree.children.elementAt(2).nextSibling, isNull);
+      });
+
+      test('should return null when the node has no parent', () {
+        expect(tree.nextSibling, isNull);
+        expect(tree.previousSibling, isNull);
+      });
+    });
+
+    group('query cache', () {
+      test('keeps working when many distinct queries are used', () {
+        // Exceed the internal cache limit with distinct queries
+        for (var i = 0; i < 600; i++) {
+          expect(me.getOrNull<int>('.#notExisting$i'), isNull);
+        }
+
+        // Repeated queries are served from the cache
+        expect(me.getOrNull<String>('.#me'), 'me');
+        expect(me.getOrNull<String>('.#me'), 'me');
       });
     });
 
@@ -1434,6 +1516,64 @@ void main() {
           expect(parent.children.elementAt(0).key, 'child0');
           expect(parent.children.elementAt(1).key, 'child1');
           expect(parent.children.elementAt(2).key, 'child2');
+        });
+      });
+
+      group('addChildren', () {
+        test('moves an existing child to the end', () {
+          parent.addChildren([child0, child1]);
+
+          parent.addChildren([child0]);
+
+          expect(parent.children.elementAt(0), same(child1));
+          expect(parent.children.elementAt(1), same(child0));
+          expect(parent.children.elementAt(0).key, 'child0');
+          expect(parent.children.elementAt(1).key, 'child1');
+        });
+
+        test('moves a child from another parent', () {
+          final other = Tree<ExampleData>(key: 'other', data: ev);
+          other.addChildren([child0]);
+          expect(other.children, [child0]);
+
+          parent.addChildren([child0]);
+
+          expect(other.children, isEmpty);
+          expect(child0.parent, same(parent));
+          expect(parent.children, [child0]);
+        });
+
+        test('throws when a child is readonly', () {
+          child0.isReadOnly = true;
+
+          var messages = <String>[];
+          try {
+            parent.addChildren([child0]);
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Tree node "child" is readonly']);
+        });
+
+        test('makes keys unique when a later child is readonly', () {
+          parent.addChildren([child0]);
+          expect(child0.key, 'child');
+
+          child2.isReadOnly = true;
+
+          var messages = <String>[];
+          try {
+            parent.addChildren([child1, child2]);
+          } catch (e) {
+            messages = [(e as dynamic).message as String];
+          }
+
+          expect(messages, ['Tree node "child" is readonly']);
+
+          // The child attached before the throw got a unique key
+          expect(child0.key, 'child0');
+          expect(child1.key, 'child1');
         });
       });
     });

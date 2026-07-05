@@ -40,7 +40,7 @@ class TreeQuery {
   bool get searchInOwnNode => firstNodeSegment == '.' || node.isEmpty;
 
   /// Returns true when searching in child nodes
-  bool get searchInChildNodes => node.contains(RegExp(r'[a-z]+'));
+  bool get searchInChildNodes => node.contains(_lowerCaseLetters);
 
   /// Returns the node path segments
   late final Iterable<String> nodeSegments;
@@ -53,6 +53,8 @@ class TreeQuery {
   // ######################
   // Private
   // ######################
+
+  static final RegExp _lowerCaseLetters = RegExp(r'[a-z]+');
 
   final String _q;
 

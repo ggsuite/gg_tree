@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.0] - 2026-07-05
+
+### Changed
+
+- Improve performance using claude
+
 ## [2.3.1] - 2026-06-08
 
 ### Changed
@@ -234,6 +240,7 @@
 
 - Initial implementation
 
+[2.4.0]: https://github.com/ggsuite/gg_tree/compare/2.3.1...2.4.0
 [2.3.1]: https://github.com/ggsuite/gg_tree/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/ggsuite/gg_tree/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/ggsuite/gg_tree/compare/2.1.0...2.2.0

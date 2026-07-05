@@ -109,7 +109,7 @@ class Tree<T extends Json> {
   /// Returns a map of all paths to their corresponding tree nodes
   Map<String, Tree<T>> pathToTreeMap({bool Function(Tree<T> slot)? where}) {
     final result = <String, Tree<T>>{};
-    _pathToTreeMap([], result, where: where);
+    _pathToTreeMap('', result, where: where);
     return result;
   }
 
@@ -145,11 +145,27 @@ class Tree<T extends Json> {
 
   /// Returns all children to list of children
   void addChildren(Iterable<Tree<T>> children) {
-    for (final child in children) {
-      child.parent = this;
-    }
+    try {
+      for (final child in children) {
+        child._throwWhenReadonly();
 
-    _makeKeysUnique();
+        // Re-adding an existing child moves it to the end
+        if (identical(child._parent, this)) {
+          _children
+            ..remove(child)
+            ..add(child);
+          continue;
+        }
+
+        child._parent?._children.remove(child);
+        child._parent = this;
+        _children.add(child);
+      }
+    } finally {
+      // Also when a child throws mid-batch, the keys of the children
+      // attached before must be made unique.
+      _makeKeysUnique();
+    }
   }
 
   /// Returns a child by its key or null if not found
@@ -352,14 +368,16 @@ class Tree<T extends Json> {
       return;
     }
 
-    for (final child in [...children]) {
-      child.visit(
-        visitor,
-        topDown: topDown,
-        where: where,
-        stopAfter: stopAfter,
-        stopBefore: stopBefore,
-      );
+    if (_children.isNotEmpty) {
+      for (final child in List<Tree<T>>.of(_children)) {
+        child.visit(
+          visitor,
+          topDown: topDown,
+          where: where,
+          stopAfter: stopAfter,
+          stopBefore: stopBefore,
+        );
+      }
     }
 
     if (!topDown) {
@@ -390,14 +408,16 @@ class Tree<T extends Json> {
       return;
     }
 
-    for (final child in [...children]) {
-      await child.visitAsync(
-        visitor,
-        topDown: topDown,
-        where: where,
-        stopAfter: stopAfter,
-        stopBefore: stopBefore,
-      );
+    if (_children.isNotEmpty) {
+      for (final child in List<Tree<T>>.of(_children)) {
+        await child.visitAsync(
+          visitor,
+          topDown: topDown,
+          where: where,
+          stopAfter: stopAfter,
+          stopBefore: stopBefore,
+        );
+      }
     }
 
     if (!topDown && matches) {
@@ -525,10 +545,60 @@ class Tree<T extends Json> {
   void _init(Tree<T>? parent) {
     _throwIfNotValidJsonKey(key);
     _throwOnForbiddenKey();
-    for (final child in [...children]) {
-      child.parent = this;
-    }
+    _adoptConstructorChildren();
     this.parent = parent;
+  }
+
+  // ...........................................................................
+  /// Attaches the children pre-seeded by the constructor in one batch.
+  ///
+  /// Detaching each child from its old parent and assigning `_parent`
+  /// directly avoids the O(children²) cost of running the [parent] setter
+  /// (contains scan + key uniquification) once per child.
+  void _adoptConstructorChildren() {
+    if (_children.isEmpty) {
+      return;
+    }
+
+    final seen = <Tree<T>>{};
+    var hasDuplicates = false;
+
+    try {
+      for (final child in _children) {
+        if (!seen.add(child)) {
+          hasDuplicates = true;
+          continue;
+        }
+
+        child._throwWhenReadonly();
+        child._parent?._children.remove(child);
+        child._parent = this;
+      }
+    } catch (_) {
+      // Children attached before the throw keep pointing to this node.
+      // Make their keys unique so no sibling key invariant is violated.
+      _makeKeysUnique();
+      rethrow;
+    }
+
+    if (hasDuplicates) {
+      _removeDuplicateChildren();
+    }
+  }
+
+  // ...........................................................................
+  /// Keeps only the last occurrence of each duplicate child instance
+  void _removeDuplicateChildren() {
+    final seen = <Tree<T>>{};
+    final deduped = <Tree<T>>[];
+    for (final child in _children.reversed) {
+      if (seen.add(child)) {
+        deduped.add(child);
+      }
+    }
+    _children
+      ..clear()
+      ..addAll(deduped.reversed);
   }
 
   // ...........................................................................
@@ -547,34 +617,25 @@ class Tree<T extends Json> {
 
   // ...........................................................................
   Json _treeProps(Tree tree, bool addComputed) {
-    final json = <String, dynamic>{};
-
-    final siblingsCount = tree.parent?.children.length ?? 1;
-    final index = tree._parent?.children.toList().indexOf(this) ?? 0;
-    final reverseIndex = siblingsCount - index - 1;
-
-    json['childCount'] = tree.children.length;
-    json['siblingsCount'] = siblingsCount;
-    json['index'] = index;
-    json['reverseIndex'] = reverseIndex;
-    json['path'] = path;
-    json['pathSimple'] = pathSimple;
-    json['isRoot'] = isRoot;
-
-    final result = {
+    final result = <String, dynamic>{
       'key': tree.key,
       'originalKey': tree.originalKey,
       'isReadOnly': tree.isReadOnly,
     };
 
     if (addComputed) {
+      final siblings = tree._parent?._children;
+      final siblingsCount = siblings?.length ?? 1;
+      final index = siblings?.indexOf(this) ?? 0;
+      final ownPath = path;
+
       result.addAll({
         'childCount': tree.children.length,
         'siblingsCount': siblingsCount,
         'index': index,
-        'reverseIndex': reverseIndex,
-        'path': path,
-        'pathSimple': pathSimple,
+        'reverseIndex': siblingsCount - index - 1,
+        'path': ownPath,
+        'pathSimple': keepOnlyLetters(ownPath),
         'isRoot': isRoot,
       });
     }
@@ -625,8 +686,31 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
+  /// Parsed queries cached by their query string
+  static final Map<String, TreeQuery> _queryCache = {};
+
+  /// The prefix marking node info queries
+  static const String _nodeInfoPrefix = '$nodeInfoKey/';
+
+  // ...........................................................................
+  /// Parses [query] or returns a previously parsed cached instance
+  static TreeQuery _parseQuery(String query) {
+    final cached = _queryCache[query];
+    if (cached != null) {
+      return cached;
+    }
+
+    final result = TreeQuery(query);
+    if (_queryCache.length >= 512) {
+      _queryCache.clear();
+    }
+    _queryCache[query] = result;
+    return result;
+  }
+
+  // ...........................................................................
   V? _getOrNull<V>(String query, {bool throwWhenNotFound = false}) {
-    final q = TreeQuery(query);
+    final q = _parseQuery(query);
 
     // Collect all nodes the query needs to be applied to
     late final Iterable<Tree<T>> nodes;
@@ -641,15 +725,17 @@ class Tree<T extends Json> {
     }
 
     // Read node data
-    final readTreeInfo = q.data.startsWith('$nodeInfoKey/');
-    final dataKey = readTreeInfo ? q.data.substring(5) : q.data;
+    final readTreeInfo = q.data.startsWith(_nodeInfoPrefix);
+    final dataKey = readTreeInfo
+        ? q.data.substring(_nodeInfoPrefix.length)
+        : q.data;
 
     // Iterate all nodes and apply the query
     var didFindAnyNode = false;
 
     for (final node in nodes) {
       // Get the child node described in q.node
-      final dataNode = node.childByPathOrNull(q.node);
+      final dataNode = node._relative(q.nodeSegments);
       if (dataNode == null) {
         continue;
       }
@@ -685,14 +771,14 @@ class Tree<T extends Json> {
 
   // ...........................................................................
   void _set<V>(String query, V value, {bool extend = false}) {
-    final q = TreeQuery(query);
+    final q = _parseQuery(query);
     final node = findNode(q.node);
     node.data.set<V>(q.data, value, extend: extend);
   }
 
   // ...........................................................................
   void _remove(String query) {
-    final q = TreeQuery(query);
+    final q = _parseQuery(query);
 
     final node = findNode(q.node);
     if (q.data.isEmpty) {
@@ -734,15 +820,14 @@ class Tree<T extends Json> {
 
     // Calculate the counts of all node names
     for (final node in _children) {
-      var nodKey = node.originalKey;
-      if (nameCounts.containsKey(nodKey)) {
-        final count = nameCounts[nodKey]!;
+      final nodKey = node.originalKey;
+      final count = nameCounts[nodKey];
+      if (count != null) {
         if (count == 1) {
           hasAmbigious = true;
         }
 
         nameCounts[nodKey] = count + 1;
-        nodKey = '${nodKey}_$count';
       } else {
         nameCounts[nodKey] = 1;
       }
@@ -755,15 +840,10 @@ class Tree<T extends Json> {
     // Rename all nodes that have duplicates
     final counts = <String, int>{};
 
-    for (final key in nameCounts.keys) {
-      counts[key] = 0;
-    }
-
-    for (var i = 0; i < _children.length; i++) {
-      final node = _children[i];
+    for (final node in _children) {
       var nodKey = node.originalKey;
       if (nameCounts[nodKey]! > 1) {
-        final count = counts[nodKey]!;
+        final count = counts[nodKey] ?? 0;
         counts[nodKey] = count + 1;
         nodKey = '$nodKey$count';
       }
@@ -775,38 +855,41 @@ class Tree<T extends Json> {
   Tree<T>? _relative(Iterable<String> path, {bool throwWhenNotFound = false}) {
     Tree<T> current = this;
 
-    final okSegments = <String>[];
+    // Only the number of matched segments is tracked here. The segment list
+    // needed for the error message is derived from it on the throw path.
+    var okCount = 0;
 
     for (final segment in path) {
-      if (segment.isEmpty) {
-        okSegments.add(segment);
+      if (segment.isEmpty || segment == '.') {
+        okCount++;
         continue;
       }
 
-      if (segment == '.') {
-        okSegments.add(segment);
-        continue;
-      } else if (segment == '..') {
+      if (segment == '..') {
         final parent = current.parent;
         if (parent == null) {
           return null;
         }
 
         current = parent;
-        okSegments.add(segment);
+        okCount++;
         continue;
       }
 
       final child = current.childByKey(segment);
       if (child == null) {
         if (throwWhenNotFound) {
-          _throwRelativePathNotFound(path, current, okSegments);
+          _throwRelativePathNotFound(
+            path,
+            current,
+            path.take(okCount).toList(),
+          );
         }
         return null;
       }
 
       current = child;
-      okSegments.add(segment);
+      okCount++;
     }
     return current;
   }
@@ -825,7 +908,9 @@ class Tree<T extends Json> {
       path = '.';
     }
 
-    final segments = path.split('/').where((e) => e.isNotEmpty);
+    // Materialized once because _findNodeRelative iterates the segments
+    // once per ancestor while walking up the tree.
+    final segments = path.split('/').where((e) => e.isNotEmpty).toList();
 
     final fromRoot = path.startsWith('/');
 
@@ -872,30 +957,34 @@ class Tree<T extends Json> {
     bool includeRoot = true,
     bool startAtRoot = false,
   }) {
-    var result = <Tree<T>>[];
+    final result = <Tree<T>>[];
     Tree<T>? current = includeSelf ? this : parent;
     while (current != null) {
       result.add(current);
       current = current.parent;
     }
 
-    result = includeRoot ? result : result.sublist(0, result.length - 1);
-    return startAtRoot ? result.toList().reversed : result;
+    if (!includeRoot) {
+      result.removeLast();
+    }
+    return startAtRoot ? result.reversed : result;
   }
 
   // ...........................................................................
   Tree<T>? _findNodeAbsolute(Iterable<String> path, bool throwWhenNotFound) {
     // Get all ancestors from root to this node
-    var nodes = ancestors(
+    final nodes = ancestors(
       includeSelf: true,
       includeRoot: false,
       startAtRoot: true,
-    );
+    ).toList();
 
-    Iterable<String> p = [...path];
+    // The current position within the path segments
+    final segments = path.toList();
+    var s = 0;
 
     // Return root when path is empty
-    if (p.isEmpty) {
+    if (segments.isEmpty) {
       return root;
     }
 
@@ -904,23 +993,25 @@ class Tree<T extends Json> {
     // Iterate through all ancestors
     for (var i = 0; i < nodes.length; i++) {
       // Get current and next node
-      final node = nodes.elementAt(i);
-      final nextNode = nodes.elementAtOrNull(i + 1);
-      final segment = p.first;
-      final nextSegment = p.elementAtOrNull(1);
+      final node = nodes[i];
+      final nextNode = i + 1 < nodes.length ? nodes[i + 1] : null;
+      final segment = segments[s];
+      final nextSegment = s + 1 < segments.length ? segments[s + 1] : null;
 
       // Check for match
       if (node.key == segment || segment == '*' || segment == '**') {
         okSegments.add(segment);
 
-        // Jump to next search segment
-        final nextSegmentMatches = nextNode?.key == nextSegment;
-        p = segment == '**' && !nextSegmentMatches && nextNode != null
-            ? p
-            : p.skip(1);
+        // Jump to next search segment. A '**' segment is kept as long as
+        // the next ancestor does not match the next segment.
+        final keepSegment =
+            segment == '**' && nextNode != null && nextNode.key != nextSegment;
+        if (!keepSegment) {
+          s++;
+        }
 
         // If this is the last segment, return the node
-        if (p.isEmpty) {
+        if (s >= segments.length) {
           return node;
         }
 
@@ -939,7 +1030,7 @@ class Tree<T extends Json> {
       }
     }
 
-    final result = nodes.last.relative(['.', ...p]);
+    final result = nodes.last.relative(['.', ...segments.skip(s)]);
 
     if (result == null && throwWhenNotFound) {
       _throwAbsolutePathNotFound(path, nodes.last, okSegments);
@@ -1051,16 +1142,16 @@ class Tree<T extends Json> {
 
   // ...........................................................................
   void _pathToTreeMap(
-    List<String> path,
+    String path,
     Map<String, Tree<T>> result, {
     bool Function(Tree<T> slot)? where,
   }) {
     final skip = where == null ? false : !where(this);
     if (!skip) {
-      result['/${path.join('/')}'] = this;
+      result[path.isEmpty ? '/' : path] = this;
     }
     for (final child in children) {
-      child._pathToTreeMap([...path, child.key], result, where: where);
+      child._pathToTreeMap('$path/${child.key}', result, where: where);
     }
   }
 
@@ -1093,12 +1184,23 @@ class Tree<T extends Json> {
     }
   }
 
-  Tree<T>? get _nextSibling => parent?.children
-      .cast<Tree<T>>()
-      .skipWhile((s) => s != this)
-      .skip(1)
-      .firstOrNull;
+  Tree<T>? get _nextSibling {
+    final siblings = _parent?._children;
+    if (siblings == null) {
+      return null;
+    }
 
-  Tree<T>? get _previousSibling =>
-      parent?.children.cast<Tree<T>>().takeWhile((s) => s != this).lastOrNull;
+    final i = siblings.indexOf(this);
+    return i >= 0 && i + 1 < siblings.length ? siblings[i + 1] : null;
+  }
+
+  Tree<T>? get _previousSibling {
+    final siblings = _parent?._children;
+    if (siblings == null) {
+      return null;
+    }
+
+    final i = siblings.indexOf(this);
+    return i > 0 ? siblings[i - 1] : null;
+  }
 }
