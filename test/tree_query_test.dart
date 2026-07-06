@@ -214,5 +214,19 @@ void main() {
         expect(TreeQuery('x/y/z#').searchToRoot, isTrue);
       });
     });
+
+    group('readsNodeInfo, nodeInfoPath', () {
+      test('detect and strip the node info prefix', () {
+        expect(TreeQuery('.#node/index').readsNodeInfo, isTrue);
+        expect(TreeQuery('.#node/index').nodeInfoPath, 'index/');
+        expect(TreeQuery('.#node').readsNodeInfo, isTrue);
+        expect(TreeQuery('.#node').nodeInfoPath, '');
+      });
+
+      test('return the data part when no prefix is present', () {
+        expect(TreeQuery('.#a/b').readsNodeInfo, isFalse);
+        expect(TreeQuery('.#a/b').nodeInfoPath, 'a/b/');
+      });
+    });
   });
 }

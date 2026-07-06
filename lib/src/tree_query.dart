@@ -26,8 +26,15 @@ class TreeQuery {
 
   // ...........................................................................
   /// Returns true when searching to the root
-  bool get searchToRoot =>
+  late final bool searchToRoot =
       node.isEmpty || !(firstNodeSegment == '.' || firstNodeSegment == '..');
+
+  /// Returns true when the data part reads node info, e.g. `node/index`.
+  /// The prefix matches `Tree.nodeInfoKey`.
+  late final bool readsNodeInfo = data.startsWith('node/');
+
+  /// Returns the data part with the `node/` info prefix removed
+  late final String nodeInfoPath = readsNodeInfo ? data.substring(5) : data;
 
   /// Returns true when searching in ancestors excluding own node
   bool get searchInParentNode =>

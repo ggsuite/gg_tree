@@ -122,8 +122,8 @@ extension _TreeLs<T extends Json> on Tree<T> {
     // of its siblings. It is maintained as [Json.visit] walks in pre-order.
     final branchLast = <bool>[];
 
-    data.visit(({key, value, parent, ancestors}) {
-      final depth = ancestors!.length;
+    data.visit((key, value, parent, ancestors) {
+      final depth = ancestors.length;
       final isLast = _isLastDataEntry(
         key: key,
         parent: parent,
@@ -170,8 +170,8 @@ extension _TreeLs<T extends Json> on Tree<T> {
     lines.add('${'  ' * depth}- $key');
 
     if (withValues) {
-      data.visit(({key, value, parent, ancestors}) {
-        final isRoot = ancestors!.length == 1;
+      data.visit((key, value, parent, ancestors) {
+        final isRoot = ancestors.length == 1;
         lines.add(
           '${'  ' * (depth + ancestors.length)}- '
           '${_dataLabel('$key', value, isRoot: isRoot)}',
@@ -212,35 +212,35 @@ extension _TreeLs<T extends Json> on Tree<T> {
     if (where == null || where(this)) {
       if (!showProps) {
         paths.add(ownPath);
+      } else {
+        // Write data properties
+        _addProps(
+          paths,
+          ownPath,
+          addTreeProps: false,
+          withValues: withValues,
+          alsoComplexValues: alsoComplexValues,
+          whereProp: whereProp,
+        );
+
+        // Write tree properties
+        _addProps(
+          paths,
+          ownPath,
+          addTreeProps: true,
+          withValues: withValues,
+          alsoComplexValues: alsoComplexValues,
+          whereProp: whereProp,
+        );
       }
-
-      // Write data properties
-      _addProps(
-        showProps,
-        paths,
-        ownPath,
-        addTreeProps: false,
-        withValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        whereProp: whereProp,
-      );
-
-      // Write tree properties
-      _addProps(
-        showProps,
-        paths,
-        ownPath,
-        addTreeProps: true,
-        withValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        whereProp: whereProp,
-      );
     }
 
-    for (final child in children) {
+    // for-in, so that a [where] predicate mutating the tree mid-walk
+    // throws a ConcurrentModificationError like before
+    for (final child in _children) {
       child._ls(
         paths,
-        '$ownPath/${child.key}',
+        '$ownPath/${child._key}',
         where: where,
         showProps: showProps,
         alsoComplexValues: alsoComplexValues,
@@ -252,7 +252,6 @@ extension _TreeLs<T extends Json> on Tree<T> {
 
   // ...........................................................................
   void _addProps(
-    bool showDataPaths,
     List<String> paths,
     String ownPath, {
     required bool addTreeProps,
@@ -260,18 +259,19 @@ extension _TreeLs<T extends Json> on Tree<T> {
     required bool alsoComplexValues,
     required WhereProp? whereProp,
   }) {
-    if (showDataPaths) {
-      final data = addTreeProps ? _treeProps(this, true) : _data;
-      final dataPaths = data.ls(
-        writeValues: withValues,
-        alsoComplexValues: alsoComplexValues,
-        where: whereProp,
-      );
+    final data = addTreeProps ? _treeProps() : _data;
+    final dataPaths = data.ls(
+      writeValues: withValues,
+      alsoComplexValues: alsoComplexValues,
+      where: whereProp,
+    );
 
-      for (var dataPath in dataPaths) {
-        final node = addTreeProps ? 'node/' : '';
-        paths.add('$ownPath#$node${dataPath.replaceFirst('./', '')}');
-      }
+    final node = addTreeProps ? 'node/' : '';
+    for (var dataPath in dataPaths) {
+      final cleaned = dataPath.startsWith('./')
+          ? dataPath.substring(2)
+          : dataPath;
+      paths.add('$ownPath#$node$cleaned');
     }
   }
 }

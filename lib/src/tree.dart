@@ -70,6 +70,11 @@ class Tree<T extends Json> {
     _throwIfNotValidJsonKey(value);
     _key = value;
     originalKey = value;
+
+    // Also bump here: with a null or unchanged parent no _makeKeysUnique
+    // call would invalidate the structure caches for the new key.
+    _structureEpoch++;
+
     parent?._makeKeysUnique();
   }
 
@@ -103,7 +108,24 @@ class Tree<T extends Json> {
   ).map((e) => e.key);
 
   /// Returns the path of this node as string
-  String get path => '/${pathSegments.join('/')}';
+  String get path {
+    if (_pathEpoch == _structureEpoch) {
+      return _cachedPath!;
+    }
+
+    // The root key is not part of the path. Going through the parent's
+    // path getter memoizes the whole ancestor chain in one pass.
+    final p = _parent;
+    final result = p == null
+        ? '/'
+        : p._parent == null
+        ? '/$_key'
+        : '${p.path}/$_key';
+
+    _cachedPath = result;
+    _pathEpoch = _structureEpoch;
+    return result;
+  }
 
   /// Returns a simple path with only /, numbers and letters
   String get pathSimple => keepOnlyLetters(path);
@@ -119,6 +141,11 @@ class Tree<T extends Json> {
   /// Set the parent
   set parent(Tree<T>? parent) {
     _throwWhenReadonly();
+
+    // Also bump here: on detach (parent = null) the old parent loses a
+    // child without any _makeKeysUnique call being made.
+    _structureEpoch++;
+
     _parent?._children.remove(this);
     _parent = parent;
 
@@ -148,6 +175,9 @@ class Tree<T extends Json> {
   /// Returns all children to list of children
   void addChildren(Iterable<Tree<T>> children) {
     try {
+      // The epoch is bumped once per attached child, not only at the end:
+      // a lazy [children] iterable can run user code between two moves and
+      // that code must not see stale caches.
       for (final child in children) {
         child._throwWhenReadonly();
 
@@ -156,12 +186,14 @@ class Tree<T extends Json> {
           _children
             ..remove(child)
             ..add(child);
+          _structureEpoch++;
           continue;
         }
 
         child._parent?._children.remove(child);
         child._parent = this;
         _children.add(child);
+        _structureEpoch++;
       }
     } finally {
       // Also when a child throws mid-batch, the keys of the children
@@ -172,12 +204,37 @@ class Tree<T extends Json> {
 
   /// Returns a child by its key or null if not found
   Tree<T>? childByKey(String key) {
-    for (final child in _children) {
-      if (child.key == key) {
-        return child;
-      }
+    final epoch = _structureEpoch;
+    if (_childByKeyEpoch == epoch) {
+      return _childByKeyMap![key];
     }
-    return null;
+
+    // First lookup after a structure change: a plain scan costs the same
+    // as the previous implementation and avoids an O(n) map rebuild per
+    // lookup in loops that alternate mutations and lookups.
+    if (_childByKeyProbeEpoch != epoch) {
+      _childByKeyProbeEpoch = epoch;
+      for (final child in _children) {
+        if (child._key == key) {
+          return child;
+        }
+      }
+      return null;
+    }
+
+    // Second lookup in the same epoch: build the map, further lookups
+    // are O(1). Duplicate current keys are legal (only originalKeys are
+    // made unique). Filling in reverse order lets earlier children
+    // overwrite later ones, preserving the first-occurrence-wins
+    // semantics of the linear scan.
+    final map = (_childByKeyMap ??= <String, Tree<T>>{})..clear();
+    final children = _children;
+    for (var i = children.length - 1; i >= 0; i--) {
+      final child = children[i];
+      map[child._key] = child;
+    }
+    _childByKeyEpoch = epoch;
+    return map[key];
   }
 
   /// Returns true if a child with the given key exists
@@ -563,11 +620,118 @@ class Tree<T extends Json> {
   bool _isReadOnly = false;
 
   // ...........................................................................
+  /// Monotonically increasing counter, bumped on every structural mutation
+  /// (key renames, parent changes, children list changes) of ANY tree.
+  ///
+  /// All structure-derived caches below are stamped with this counter and
+  /// are only valid while their stamp equals it. Bumping inside a mutator
+  /// body is safe because no mutator reads a cached getter mid-mutation.
+  /// Data mutations must NOT bump: node data is mutable in place through
+  /// the [data] getter anyway, so no cache may ever depend on it.
+  static int _structureEpoch = 0;
+
+  /// Cached result of [path], valid while [_pathEpoch] is current
+  String? _cachedPath;
+  int _pathEpoch = -1;
+
+  /// Cached key-to-child map, valid while [_childByKeyEpoch] is current.
+  /// [_childByKeyProbeEpoch] records the first, map-less lookup per epoch.
+  Map<String, Tree<T>>? _childByKeyMap;
+  int _childByKeyEpoch = -1;
+  int _childByKeyProbeEpoch = -1;
+
+  /// Cached index of this node in its parent's children list, valid while
+  /// [_indexEpoch] is current
+  int _indexInParent = 0;
+  int _indexEpoch = -1;
+
+  /// Cached path resolutions of [_findNode] and [_childByPath], valid
+  /// while [_resolveEpoch] is current. Two maps because findNode searches
+  /// up the ancestor chain while childByPath strictly descends.
+  Map<String, Tree<T>>? _findNodeCache;
+  Map<String, Tree<T>>? _childByPathCache;
+  int _resolveEpoch = -1;
+
+  /// Maximum number of entries in a per-node resolution cache
+  static const int _maxResolutionCacheLength = 128;
+
+  // ...........................................................................
+  /// Returns the index of this node within its parent's children.
+  ///
+  /// Callers must guarantee a non-null parent. On a stale stamp the parent
+  /// re-stamps ALL children in one O(n) pass, so iterating the siblings of
+  /// a wide node costs O(n) overall instead of O(n²).
+  int _siblingIndex() {
+    if (_indexEpoch != _structureEpoch) {
+      _parent!._reindexChildren();
+    }
+    return _indexInParent;
+  }
+
+  /// Stamps the current index into all children
+  void _reindexChildren() {
+    final epoch = _structureEpoch;
+    final children = _children;
+    for (var i = 0; i < children.length; i++) {
+      final child = children[i];
+
+      // After a partial constructor failure a foreign node can sit in this
+      // list while still belonging to another parent. Its index within
+      // that parent must not be overwritten with its position here.
+      if (identical(child._parent, this)) {
+        child
+          .._indexInParent = i
+          .._indexEpoch = epoch;
+      }
+    }
+  }
+
+  // ...........................................................................
+  /// Clears the resolution caches when the structure changed
+  void _validateResolutionCaches() {
+    if (_resolveEpoch != _structureEpoch) {
+      _findNodeCache?.clear();
+      _childByPathCache?.clear();
+      _resolveEpoch = _structureEpoch;
+    }
+  }
+
+  // ...........................................................................
+  /// Path strings split into segments, cached by the path string
+  static final Map<String, List<String>> _segmentsCache = {};
+
+  /// Splits [path] into segments or returns a previously cached split.
+  /// The returned list must not be modified.
+  static List<String> _splitPath(String path) {
+    final cached = _segmentsCache[path];
+    if (cached != null) {
+      return cached;
+    }
+
+    final result = path
+        .split('/')
+        .where((e) => e.isNotEmpty)
+        .toList(growable: false);
+    if (_segmentsCache.length >= 512) {
+      _segmentsCache.clear();
+    }
+    _segmentsCache[path] = result;
+    return result;
+  }
+
+  // ...........................................................................
   void _init(Tree<T>? parent) {
     _throwIfNotValidJsonKey(key);
     _throwOnForbiddenKey();
     _adoptConstructorChildren();
-    this.parent = parent;
+
+    // The initializer list already preset _parent, so going through the
+    // parent setter would scan the new parent's children twice for a node
+    // that cannot be there yet. Attach directly instead.
+    if (parent != null) {
+      parent._children.add(this);
+      parent._makeKeysUnique();
+    }
   }
 
   FutureOr<void> _visitFutureOr(
@@ -630,12 +794,14 @@ class Tree<T extends Json> {
       return;
     }
 
-    final seen = <Tree<T>>{};
     var hasDuplicates = false;
 
     try {
       for (final child in _children) {
-        if (!seen.add(child)) {
+        // `this` has not escaped its constructor yet, so a child can only
+        // point at it when an earlier iteration of this loop adopted the
+        // same instance — i.e. the child appears twice in the list.
+        if (identical(child._parent, this)) {
           hasDuplicates = true;
           continue;
         }
@@ -686,50 +852,42 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
-  Json _treeProps(Tree tree, bool addComputed) {
-    final result = <String, dynamic>{
-      'key': tree.key,
-      'originalKey': tree.originalKey,
-      'isReadOnly': tree.isReadOnly,
+  Json _treeProps() {
+    final siblingsCount = _parent?._children.length ?? 1;
+    final index = _parent == null ? 0 : _siblingIndex();
+    final ownPath = path;
+
+    return <String, dynamic>{
+      'key': key,
+      'originalKey': originalKey,
+      'isReadOnly': isReadOnly,
+      'childCount': _children.length,
+      'siblingsCount': siblingsCount,
+      'index': index,
+      'reverseIndex': siblingsCount - index - 1,
+      'path': ownPath,
+      'pathSimple': keepOnlyLetters(ownPath),
+      'isRoot': isRoot,
     };
-
-    if (addComputed) {
-      final siblings = tree._parent?._children;
-      final siblingsCount = siblings?.length ?? 1;
-      final index = siblings?.indexOf(this) ?? 0;
-      final ownPath = path;
-
-      result.addAll({
-        'childCount': tree.children.length,
-        'siblingsCount': siblingsCount,
-        'index': index,
-        'reverseIndex': siblingsCount - index - 1,
-        'path': ownPath,
-        'pathSimple': keepOnlyLetters(ownPath),
-        'isRoot': isRoot,
-      });
-    }
-
-    return result;
   }
 
   // ...........................................................................
-  Json _toJson(Tree tree, {bool onlyOwn = false, bool addComputed = false}) {
-    final json = Json();
-    json.addAll(_treeProps(tree, addComputed));
+  Json _toJson(Tree tree) {
+    // Key insertion order matters for encoded output:
+    // key, originalKey, isReadOnly, _data, _children.
+    final json = <String, dynamic>{
+      'key': tree.key,
+      'originalKey': tree.originalKey,
+      'isReadOnly': tree.isReadOnly,
+      '_data': tree.data.deepCopy(),
+    };
 
-    if (onlyOwn) {
-      return json;
-    }
-
-    json['_data'] = tree.data.deepCopy();
-
-    final childrenJson = <Json>[];
-    for (final child in tree.children) {
-      childrenJson.add(_toJson(child));
-    }
-
-    if (childrenJson.isNotEmpty) {
+    final children = tree._children;
+    if (children.isNotEmpty) {
+      final childrenJson = <Json>[];
+      for (var i = 0; i < children.length; i++) {
+        childrenJson.add(_toJson(children[i]));
+      }
       json['_children'] = childrenJson;
     }
 
@@ -759,9 +917,6 @@ class Tree<T extends Json> {
   /// Parsed queries cached by their query string
   static final Map<String, TreeQuery> _queryCache = {};
 
-  /// The prefix marking node info queries
-  static const String _nodeInfoPrefix = '$nodeInfoKey/';
-
   // ...........................................................................
   /// Parses [query] or returns a previously parsed cached instance
   static TreeQuery _parseQuery(String query) {
@@ -781,46 +936,37 @@ class Tree<T extends Json> {
   // ...........................................................................
   V? _getOrNull<V>(String query, {bool throwWhenNotFound = false}) {
     final q = _parseQuery(query);
+    final searchToRoot = q.searchToRoot;
 
-    // Collect all nodes the query needs to be applied to
-    late final Iterable<Tree<T>> nodes;
-    if (q.searchToRoot) {
-      nodes = ancestors(
-        includeRoot: true,
-        includeSelf: true,
-        startAtRoot: false,
-      );
-    } else {
-      nodes = [this];
-    }
-
-    // Read node data
-    final readTreeInfo = q.data.startsWith(_nodeInfoPrefix);
-    final dataKey = readTreeInfo
-        ? q.data.substring(_nodeInfoPrefix.length)
-        : q.data;
-
-    // Iterate all nodes and apply the query
+    // Walk from this node towards the root without materializing the
+    // ancestors and apply the query to each node
     var didFindAnyNode = false;
 
-    for (final node in nodes) {
+    for (Tree<T>? node = this; node != null; node = node._parent) {
       // Get the child node described in q.node
       final dataNode = node._relative(q.nodeSegments);
-      if (dataNode == null) {
-        continue;
+      if (dataNode != null) {
+        didFindAnyNode = true;
+
+        final value = q.readsNodeInfo
+            ? dataNode._treeInfo<V>(q.nodeInfoPath)
+            : dataNode._data.getOrNull<V>(q.data);
+
+        if (value != null) {
+          return value;
+        }
       }
-      didFindAnyNode = true;
 
-      final value = readTreeInfo
-          ? dataNode._treeInfo<V>(dataKey)
-          : dataNode._data.getOrNull<V>(q.data);
-
-      if (value != null) {
-        return value;
+      if (!searchToRoot) {
+        break;
       }
     }
 
     if (throwWhenNotFound) {
+      final nodes = searchToRoot
+          ? ancestors(includeRoot: true, includeSelf: true, startAtRoot: false)
+          : <Tree<T>>[this];
+
       if (!didFindAnyNode) {
         _throwNodeNotFound(q.node, nodes);
       } else {
@@ -867,44 +1013,79 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
+  /// Private copy constructor used by [_deepCopy].
+  ///
+  /// Skips key validation, child adoption and key uniquification: the
+  /// copied keys come from an already valid node. Mirrors the field
+  /// semantics of [flatCopyWith]: `_parse` is not forwarded and the copy
+  /// is never readonly. Keep the field list in sync with the main
+  /// constructor when adding fields.
+  Tree._copy({
+    required String key,
+    required this.originalKey,
+    required T data,
+    required this.isValidJsonKey,
+  }) : _key = key,
+       _data = data,
+       _children = [],
+       _parent = null,
+       _parse = null;
+
   Tree<T> _deepCopy(Tree<T> tree, [bool Function(Tree<T>)? where]) {
-    final result = tree.flatCopyWith();
-    final children = <Tree<T>>[];
-    for (final child in tree.children) {
+    final result = Tree<T>._copy(
+      key: tree._key,
+      originalKey: tree.originalKey,
+      data: tree._data.deepCopy() as T,
+      isValidJsonKey: tree.isValidJsonKey,
+    );
+
+    // for-in, so that a [where] predicate mutating the source mid-copy
+    // throws a ConcurrentModificationError like before
+    for (final child in tree._children) {
       if (where == null || where(child)) {
-        children.add(_deepCopy(child, where));
+        final copiedChild = _deepCopy(child, where).._parent = result;
+        result._children.add(copiedChild);
       }
     }
-    result.addChildren(children);
+
+    // Load-bearing even without a where filter: sources can contain
+    // surviving suffixed keys like [a0, a2] which a copy renames to
+    // [a0, a1]. Also supplies the epoch bump for the direct _parent and
+    // _children writes above.
+    result._makeKeysUnique();
     return result;
   }
 
   // ...........................................................................
   void _makeKeysUnique() {
+    // Every caller of this method has mutated (or may have mutated) tree
+    // structure — including the constructor, addChildren's finally block
+    // and the adoption catch path — so invalidate all structure caches.
+    _structureEpoch++;
+
     if (_children.length <= 1) {
       return;
     }
 
-    final nameCounts = <String, int>{};
+    // Detect whether any original key occurs more than once
+    final seen = <String>{};
     bool hasAmbigious = false;
 
-    // Calculate the counts of all node names
     for (final node in _children) {
-      final nodKey = node.originalKey;
-      final count = nameCounts[nodKey];
-      if (count != null) {
-        if (count == 1) {
-          hasAmbigious = true;
-        }
-
-        nameCounts[nodKey] = count + 1;
-      } else {
-        nameCounts[nodKey] = 1;
+      if (!seen.add(node.originalKey)) {
+        hasAmbigious = true;
+        break;
       }
     }
 
     if (!hasAmbigious) {
       return;
+    }
+
+    // Calculate the counts of all node names
+    final nameCounts = <String, int>{};
+    for (final node in _children) {
+      nameCounts[node.originalKey] = (nameCounts[node.originalKey] ?? 0) + 1;
     }
 
     // Rename all nodes that have duplicates
@@ -968,8 +1149,27 @@ class Tree<T extends Json> {
   Tree<T>? _absolute(Iterable<String> path) => root.relative(path);
 
   Tree<T>? _childByPath(String path, {bool throwWhenNotFound = false}) {
-    final segments = path.split('/').where((e) => e.isNotEmpty);
-    return _relative(segments, throwWhenNotFound: throwWhenNotFound);
+    _validateResolutionCaches();
+    final cache = _childByPathCache ??= <String, Tree<T>>{};
+    final cached = cache[path];
+    if (cached != null) {
+      return cached;
+    }
+
+    final result = _relative(
+      _splitPath(path),
+      throwWhenNotFound: throwWhenNotFound,
+    );
+
+    // Only found nodes are cached: the not-found error messages must be
+    // rebuilt from the live tree on every throwing lookup.
+    if (result != null) {
+      if (cache.length >= _maxResolutionCacheLength) {
+        cache.clear();
+      }
+      cache[path] = result;
+    }
+    return result;
   }
 
   // ...........................................................................
@@ -978,17 +1178,29 @@ class Tree<T extends Json> {
       path = '.';
     }
 
-    // Materialized once because _findNodeRelative iterates the segments
-    // once per ancestor while walking up the tree.
-    final segments = path.split('/').where((e) => e.isNotEmpty).toList();
+    _validateResolutionCaches();
+    final cache = _findNodeCache ??= <String, Tree<T>>{};
+    final cached = cache[path];
+    if (cached != null) {
+      return cached;
+    }
 
+    final segments = _splitPath(path);
     final fromRoot = path.startsWith('/');
 
-    if (fromRoot) {
-      return _findNodeAbsolute(segments, throwWhenNotFound);
-    } else {
-      return _findNodeRelative(segments, throwWhenNotFound);
+    final result = fromRoot
+        ? _findNodeAbsolute(segments, throwWhenNotFound)
+        : _findNodeRelative(segments, throwWhenNotFound);
+
+    // Only found nodes are cached: the not-found error messages must be
+    // rebuilt from the live tree on every throwing lookup.
+    if (result != null) {
+      if (cache.length >= _maxResolutionCacheLength) {
+        cache.clear();
+      }
+      cache[path] = result;
     }
+    return result;
   }
 
   // ...........................................................................
@@ -1041,7 +1253,12 @@ class Tree<T extends Json> {
   }
 
   // ...........................................................................
-  Tree<T>? _findNodeAbsolute(Iterable<String> path, bool throwWhenNotFound) {
+  Tree<T>? _findNodeAbsolute(List<String> segments, bool throwWhenNotFound) {
+    // Return root when path is empty
+    if (segments.isEmpty) {
+      return root;
+    }
+
     // Get all ancestors from root to this node
     final nodes = ancestors(
       includeSelf: true,
@@ -1050,13 +1267,7 @@ class Tree<T extends Json> {
     ).toList();
 
     // The current position within the path segments
-    final segments = path.toList();
     var s = 0;
-
-    // Return root when path is empty
-    if (segments.isEmpty) {
-      return root;
-    }
 
     final okSegments = <String>[];
 
@@ -1092,7 +1303,7 @@ class Tree<T extends Json> {
       else {
         // throw when not found
         if (throwWhenNotFound) {
-          _throwAbsolutePathNotFound(path, node, okSegments);
+          _throwAbsolutePathNotFound(segments, node, okSegments);
         }
 
         // or return null
@@ -1103,7 +1314,7 @@ class Tree<T extends Json> {
     final result = nodes.last.relative(['.', ...segments.skip(s)]);
 
     if (result == null && throwWhenNotFound) {
-      _throwAbsolutePathNotFound(path, nodes.last, okSegments);
+      _throwAbsolutePathNotFound(segments, nodes.last, okSegments);
     }
     return result;
   }
@@ -1220,16 +1431,16 @@ class Tree<T extends Json> {
     if (!skip) {
       result[path.isEmpty ? '/' : path] = this;
     }
-    for (final child in children) {
-      child._pathToTreeMap('$path/${child.key}', result, where: where);
+
+    // for-in, so that a [where] predicate mutating the tree mid-walk
+    // throws a ConcurrentModificationError like before
+    for (final child in _children) {
+      child._pathToTreeMap('$path/${child._key}', result, where: where);
     }
   }
 
   // ...........................................................................
-  V? _treeInfo<V>(String dataKey) {
-    final dataJson = _toJson(this, onlyOwn: true, addComputed: true);
-    return dataJson.getOrNull<V>(dataKey);
-  }
+  V? _treeInfo<V>(String dataKey) => _treeProps().getOrNull<V>(dataKey);
 
   // ...........................................................................
   P _parsed<P>() {
@@ -1260,8 +1471,8 @@ class Tree<T extends Json> {
       return null;
     }
 
-    final i = siblings.indexOf(this);
-    return i >= 0 && i + 1 < siblings.length ? siblings[i + 1] : null;
+    final i = _siblingIndex();
+    return i + 1 < siblings.length ? siblings[i + 1] : null;
   }
 
   Tree<T>? get _previousSibling {
@@ -1270,7 +1481,7 @@ class Tree<T extends Json> {
       return null;
     }
 
-    final i = siblings.indexOf(this);
+    final i = _siblingIndex();
     return i > 0 ? siblings[i - 1] : null;
   }
 }

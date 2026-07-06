@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0] - 2026-07-06
+
+### Changed
+
+- Update dependencies, esp. gg\_tree for better performance
+- Optimize code using claude. Update to gg\_json 4.0.0
+
 ## [2.5.0] - 2026-07-05
 
 ### Added
@@ -246,6 +253,7 @@
 
 - Initial implementation
 
+[2.6.0]: https://github.com/ggsuite/gg_tree/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/ggsuite/gg_tree/compare/2.4.0...2.5.0
 [2.4.0]: https://github.com/ggsuite/gg_tree/compare/2.3.1...2.4.0
 [2.3.1]: https://github.com/ggsuite/gg_tree/compare/2.3.0...2.3.1

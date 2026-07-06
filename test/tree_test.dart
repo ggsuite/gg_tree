@@ -2023,5 +2023,206 @@ void main() {
         expect(me.lsNodesWhere(null), [me, child, grandchild]);
       });
     });
+
+    group('structure caches', () {
+      group('path', () {
+        test('returns / for the root and stays correct on repeated reads', () {
+          expect(root.path, '/');
+          expect(root.path, '/');
+          expect(grandpa.path, '/grandpa');
+          expect(me.path, '/grandpa/dad/me');
+          expect(me.path, '/grandpa/dad/me');
+        });
+
+        test('updates when an ancestor is renamed', () {
+          expect(me.path, '/grandpa/dad/me');
+          grandpa.key = 'opa';
+          expect(me.path, '/opa/dad/me');
+          expect(grandchild.path, '/opa/dad/me/child/grandchild');
+        });
+
+        test('does not change when the root is renamed', () {
+          expect(me.path, '/grandpa/dad/me');
+          root.key = 'newRoot';
+          expect(me.path, '/grandpa/dad/me');
+        });
+
+        test('updates when a subtree is moved to another parent', () {
+          expect(child.path, '/grandpa/dad/me/child');
+          me.parent = root;
+          expect(me.path, '/me');
+          expect(child.path, '/me/child');
+          expect(grandchild.path, '/me/child/grandchild');
+        });
+
+        test('updates when a subtree is detached', () {
+          expect(child.path, '/grandpa/dad/me/child');
+          me.parent = null;
+          expect(me.path, '/');
+          expect(child.path, '/child');
+          expect(grandchild.path, '/child/grandchild');
+        });
+      });
+
+      group('childByKey', () {
+        test('stays correct on repeated lookups and after renames', () {
+          // First, second and third lookup take different paths
+          // (linear scan, map build, map hit)
+          expect(dad.childByKey('me'), same(me));
+          expect(dad.childByKey('me'), same(me));
+          expect(dad.childByKey('me'), same(me));
+          expect(dad.childByKey('missing'), isNull);
+          me.key = 'ich';
+          expect(dad.childByKey('me'), isNull);
+          expect(dad.childByKey('ich'), same(me));
+          expect(dad.childByKey('ich'), same(me));
+        });
+
+        test('returns the first of several children with the same key', () {
+          final a = Tree<Json>(key: 'a', data: {});
+          final b = Tree<Json>(key: 'a', data: {});
+          final c = Tree<Json>(key: 'b', data: {});
+          final parent = Tree<Json>(key: 'p', data: {}, children: [a, b, c]);
+
+          // The duplicate original keys were renamed
+          expect(a.key, 'a0');
+          expect(b.key, 'a1');
+
+          // Renaming c to a0 creates a duplicate current key: the renamed
+          // sibling keeps a0 because only original keys are made unique.
+          c.key = 'a0';
+          expect(a.key, 'a0');
+          expect(c.key, 'a0');
+
+          // The first child wins, both on the first lookup (linear scan)
+          // and on repeated lookups (cached map)
+          expect(parent.childByKey('a0'), same(a));
+          expect(parent.childByKey('a0'), same(a));
+          expect(parent.childByKey('a0'), same(a));
+        });
+      });
+
+      group('addChildren', () {
+        test('serves fresh values to code inside a lazy iterable', () {
+          final p = Tree<Json>(key: 'p', data: {});
+
+          // Warm the caches
+          expect(p.hasChildWithKey('b'), isFalse);
+          expect(p.hasChildWithKey('b'), isFalse);
+
+          // The map callback for the second element runs after the first
+          // element was attached and must observe it
+          final b = Tree<Json>(key: 'b', data: {});
+          final c = Tree<Json>(key: 'c', data: {});
+          final seen = <bool>[];
+          p.addChildren(
+            [b, c].map((n) {
+              seen.add(p.hasChildWithKey('b'));
+              return n;
+            }),
+          );
+          expect(seen, [false, true]);
+        });
+      });
+
+      group('nextSibling, previousSibling', () {
+        test('reflect reorderings done by addChildren', () {
+          final c0 = Tree<Json>(key: 'c0', data: {});
+          final c1 = Tree<Json>(key: 'c1', data: {});
+          final c2 = Tree<Json>(key: 'c2', data: {});
+          final parent = Tree<Json>(key: 'p', data: {}, children: [c0, c1, c2]);
+
+          expect(c0.nextSibling, same(c1));
+          expect(c1.previousSibling, same(c0));
+
+          // Re-adding c0 moves it to the end: [c1, c2, c0]
+          parent.addChildren([c0]);
+          expect(c0.nextSibling, isNull);
+          expect(c0.previousSibling, same(c2));
+          expect(c1.previousSibling, isNull);
+          expect(c2.nextSibling, same(c0));
+        });
+
+        test('stay correct for foreign children in partial failure states', () {
+          final c1 = Tree<Json>(key: 'c1', data: {});
+          final c2 = Tree<Json>(key: 'c2', data: {});
+          final oldParent = Tree<Json>(key: 'p', data: {}, children: [c1, c2]);
+
+          // The constructor adopts `adopted`, then throws on the readonly
+          // node and leaves c2 attached to its old parent while it is also
+          // listed in the failed node's children.
+          final adopted = Tree<Json>(key: 'a', data: {});
+          final ro = Tree<Json>(key: 'ro', data: {})..isReadOnly = true;
+          expect(
+            () => Tree<Json>(key: 't', data: {}, children: [adopted, ro, c2]),
+            throwsException,
+          );
+          expect(adopted.parent?.key, 't');
+          expect(c2.parent, same(oldParent));
+
+          // Sibling lookups on the failed node's children must not poison
+          // the sibling indices of c2 within its real parent
+          expect(adopted.previousSibling, isNull);
+          expect(c2.previousSibling, same(c1));
+          expect(c2.nextSibling, isNull);
+        });
+      });
+
+      group('findNode, childByPath', () {
+        test('resolve fresh nodes after the tree changed', () {
+          expect(root.findNode('grandpa/dad'), same(dad));
+          expect(root.findNode('grandpa/dad'), same(dad));
+
+          dad.key = 'father';
+          expect(root.findNodeOrNull('grandpa/dad'), isNull);
+          expect(root.findNode('grandpa/father'), same(dad));
+
+          expect(me.childByPath('child/grandchild'), same(grandchild));
+          grandchild.key = 'gc';
+          expect(me.childByPathOrNull('child/grandchild'), isNull);
+          expect(me.childByPath('child/gc'), same(grandchild));
+        });
+
+        test('keep working when many distinct paths are used', () {
+          // Exceed the internal caches with distinct paths. 600 paths
+          // overflow both the resolution caches and the segment cache.
+          final children = List.generate(
+            600,
+            (i) => Tree<Json>(key: 'c$i', data: {'v': i}),
+          );
+          final wide = Tree<Json>(key: 'root', data: {}, children: children);
+
+          for (var i = 0; i < 600; i++) {
+            expect(wide.findNode('c$i'), same(children[i]));
+            expect(wide.childByPath('c$i'), same(children[i]));
+          }
+
+          // Repeated lookups are still correct
+          expect(wide.findNode('c0'), same(children[0]));
+          expect(wide.childByPath('c0'), same(children[0]));
+        });
+      });
+
+      group('deepCopy', () {
+        test('renames surviving suffixed keys like the previous version', () {
+          final a0 = Tree<Json>(key: 'a', data: {});
+          final a1 = Tree<Json>(key: 'a', data: {});
+          final a2 = Tree<Json>(key: 'a', data: {});
+          final parent = Tree<Json>(key: 'p', data: {}, children: [a0, a1, a2]);
+          expect(parent.children.map((e) => e.key), ['a0', 'a1', 'a2']);
+
+          // Detaching a child does not re-uniquify the remaining keys
+          a1.parent = null;
+          expect(parent.children.map((e) => e.key), ['a0', 'a2']);
+
+          // But a deep copy renames them
+          final copy = parent.deepCopy();
+          expect(copy.children.map((e) => e.key), ['a0', 'a1']);
+
+          // The source stays untouched
+          expect(parent.children.map((e) => e.key), ['a0', 'a2']);
+        });
+      });
+    });
   });
 }
