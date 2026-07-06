@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1] - 2026-07-06
+
+### Changed
+
+- gg\_multi: changed references to git
+- Gg Multi: changed references to pub.dev
+
 ## [2.6.0] - 2026-07-06
 
 ### Changed
@@ -253,6 +260,7 @@
 
 - Initial implementation
 
+[2.6.1]: https://github.com/ggsuite/gg_tree/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/ggsuite/gg_tree/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/ggsuite/gg_tree/compare/2.4.0...2.5.0
 [2.4.0]: https://github.com/ggsuite/gg_tree/compare/2.3.1...2.4.0
