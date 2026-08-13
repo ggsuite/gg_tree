@@ -20,17 +20,15 @@ class Tree<T extends Json> {
   Tree({
     required String key,
     Tree<T>? parent,
-    required T data,
+    required this._data,
     Iterable<Tree<T>> children = const [],
     String? originalKey,
     this.isValidJsonKey = _isValidJsonKey,
-    P Function<P>(Json)? parse,
+    this._parse,
   }) : originalKey = originalKey ?? key,
        _key = key,
-       _data = data,
        _children = [...children],
-       _parent = parent,
-       _parse = parse {
+       _parent = parent {
     _init(parent);
     _makeKeysUnique();
   }
@@ -1021,13 +1019,11 @@ class Tree<T extends Json> {
   /// is never readonly. Keep the field list in sync with the main
   /// constructor when adding fields.
   Tree._copy({
-    required String key,
+    required this._key,
     required this.originalKey,
-    required T data,
+    required this._data,
     required this.isValidJsonKey,
-  }) : _key = key,
-       _data = data,
-       _children = [],
+  }) : _children = [],
        _parent = null,
        _parse = null;
 

@@ -4,7 +4,7 @@ version: 2.6.1
 repository: https://github.com/ggsuite/gg_tree.git
 
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.13.0 <4.0.0"
 
 dependencies:
   path: ^1.9.1
@@ -12,9 +12,9 @@ dependencies:
 
   gg_json: ^4.0.1
 dev_dependencies:
-  build_runner: ^2.15.0
+  build_runner: ^2.16.0
   gg_golden: ^3.0.0
   gg_test_matchers: ^1.1.2
-  json_serializable: ^6.14.0
+  json_serializable: ^6.14.1
   lints: ^6.1.0
   test: ^1.31.2

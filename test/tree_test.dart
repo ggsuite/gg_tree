@@ -1878,9 +1878,8 @@ void main() {
           final visitedKeys = <String>[];
           final result = root.visitFutureOr((node) {
             if (node.key == 'dad') {
-              return Future<void>.delayed(
-                Duration.zero,
-              ).then((_) => visitedKeys.add(node.key));
+              return Future<void>.delayed(Duration.zero)
+                  .then((_) => visitedKeys.add(node.key));
             }
             visitedKeys.add(node.key);
             return null;
