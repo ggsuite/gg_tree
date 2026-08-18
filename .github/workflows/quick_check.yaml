@@ -4,18 +4,14 @@ name: Tests
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
   pull_request:
-    branches: ['main']
+    branches: ["main"]
 
 jobs:
   build:
     name: Quick check
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v5
@@ -25,5 +21,4 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: npx @tssuite/gg-js one did commit
-
+      - run: npx ggwsm one did commit
