@@ -172,26 +172,23 @@ packages:
   gg_golden:
     dependency: "direct dev"
     description:
-      name: gg_golden
-      sha256: def537e8108e6091ae4b13a37f72cc2d464034dfec49b24c4ce6781428af991f
-      url: "https://pub.dev"
-    source: hosted
+      path: "../gg_golden"
+      relative: true
+    source: path
     version: "3.1.0"
   gg_json:
     dependency: "direct main"
     description:
-      name: gg_json
-      sha256: "2f9961d38cb71a30f900bc65db65d82a7f25e107b4cefe96b94afb65ab93269e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../gg_json"
+      relative: true
+    source: path
     version: "4.1.0"
   gg_test_matchers:
     dependency: "direct dev"
     description:
-      name: gg_test_matchers
-      sha256: "9a97cf2ec34104ecdd835e417902fdc00c1c82678a080948f130b514e54d3c18"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../gg_test_matchers"
+      relative: true
+    source: path
     version: "1.2.0"
   glob:
     dependency: transitive
