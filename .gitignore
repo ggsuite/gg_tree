@@ -12,7 +12,6 @@ build
 .kidney_status
 .gg/*
 !.gg/gg.json
-!.gg/.gg.json
 .gg/publish_config.json
 .gg/publish_state.json
 .gg/gg-publish.json
