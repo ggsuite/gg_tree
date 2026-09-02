@@ -9,4 +9,4 @@
 // coverage:ignore-file
 
 /// The version of the `gg_tree` package.
-const String ggTreeVersion = '2.7.0';
+const String ggTreeVersion = '2.8.0';
