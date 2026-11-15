@@ -11,6 +11,7 @@ build
 .gg_localize*
 .kidney_status
 .gg/*
+!.gg/gg_rc
 !.gg/gg.json
 .gg/publish_config.json
 .gg/publish_state.json
